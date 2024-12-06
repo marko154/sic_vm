@@ -12,7 +12,8 @@ func main() {
 	flag.Parse()
 
 	if flag.NArg() < 1 {
-		fmt.Println("Missing filename")
+		fmt.Println("missing filename")
+		fmt.Println("usage: sic_vm <filename>")
 		os.Exit(1)
 	}
 
@@ -20,17 +21,17 @@ func main() {
 	file, err := os.Open(filename)
 
 	if err != nil {
-		fmt.Printf("Error: Failed to open '%s': %v\n", filename, err)
+		fmt.Printf("error: Failed to open '%s': %v\n", filename, err)
 		os.Exit(1)
 	}
 
 	defer file.Close()
 
 	reader := bufio.NewReader(file)
-	vm := vm.NewVM()
+	vm := vm.NewVM(reader)
 
-	if err := vm.Load(reader); err != nil {
-		fmt.Printf("Error: Failed to load '%s': %v\n", filename, err)
+	if err := vm.Load(); err != nil {
+		fmt.Printf("error: Failed to load '%s': %v\n", filename, err)
 		os.Exit(1)
 	}
 
