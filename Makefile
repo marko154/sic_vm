@@ -16,6 +16,10 @@ test:
 clean:
 	@rm -rf main
 
+generate:
+	@echo "Generating..."
+	@go generate ./...
+
 # Run the application
 run:
 	./main

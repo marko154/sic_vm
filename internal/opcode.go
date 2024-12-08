@@ -124,3 +124,5 @@ const (
 	// writedev(m, A.low)
 	WD Opcode = 0xDC
 )
+
+//go:generate stringer -type=Opcode
