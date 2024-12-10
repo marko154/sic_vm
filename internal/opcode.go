@@ -125,4 +125,12 @@ const (
 	WD Opcode = 0xDC
 )
 
+func isStoreInstruction(opcode byte) bool {
+	switch Opcode(opcode) {
+	case STA, STB, STCH, STF, STI, STL, STS, STSW, STT, STX:
+		return true
+	}
+	return false
+}
+
 //go:generate stringer -type=Opcode
