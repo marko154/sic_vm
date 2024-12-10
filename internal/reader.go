@@ -2,6 +2,7 @@ package vm
 
 import (
 	"bufio"
+	"io"
 	"strconv"
 )
 
@@ -15,8 +16,8 @@ type Reader struct {
 	reader *bufio.Reader
 }
 
-func NewReader(reader *bufio.Reader) *Reader {
-	return &Reader{reader: reader}
+func NewReader(reader io.Reader) *Reader {
+	return &Reader{reader: bufio.NewReader(reader)}
 }
 
 func (r *Reader) ReadByte() (byte, error) {

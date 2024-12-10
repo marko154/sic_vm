@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"bufio"
 	"io"
 )
 
@@ -9,7 +8,7 @@ type Loader struct {
 	Reader ByteReader
 }
 
-func NewLoader(reader *bufio.Reader) *Loader {
+func NewLoader(reader io.Reader) *Loader {
 	return &Loader{Reader: NewReader(reader)}
 }
 
