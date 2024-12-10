@@ -2,16 +2,27 @@ package vm
 
 import "fmt"
 
+// Condition codes
+type ConditionCode int
+
+const (
+	CC_EQ        ConditionCode = 0b00
+	CC_LT        ConditionCode = 0b01
+	CC_GT        ConditionCode = 0b10
+	CC_UNDEFINED ConditionCode = 0b11
+)
+
+// https://sic-xe.github.io/chapters/sic.html
 type Registers struct {
-	A  int
-	X  int
-	L  int
-	B  int
+	A  int // accumulator
+	X  int // index register
+	L  int // linkage register (jumps)
+	B  int // base register
 	S  int
 	T  int
 	F  float64
 	PC int
-	SW int
+	SW int // status word
 }
 
 func NewRegisters() *Registers {
@@ -39,6 +50,7 @@ func (registers *Registers) GetRegRef(idx int) *int {
 	case 9:
 		return &registers.SW
 	default:
+		// TODO: return error instead of panic, for better error handling in the visualization
 		panic(fmt.Sprintf("Invalid register index: %d", idx))
 	}
 }
@@ -51,4 +63,24 @@ func (registers *Registers) GetReg(idx int) int {
 func (registers *Registers) SetReg(idx int, val int) {
 	regRef := registers.GetRegRef(idx)
 	*regRef = val
+}
+
+func (registers *Registers) SetCC(cc ConditionCode) {
+	registers.SW &= 0x00FFFF3F
+	registers.SW |= int(cc) << 6
+}
+
+func (registers *Registers) GetCC() ConditionCode {
+	return ConditionCode((registers.SW >> 6) & 0x03)
+}
+
+func getConditionCodes(r1Val, r2Val int) ConditionCode {
+	if r1Val == r2Val {
+		return CC_EQ
+	} else if r1Val < r2Val {
+		return CC_LT
+	} else if r1Val > r2Val {
+		return CC_GT
+	}
+	return CC_UNDEFINED
 }
