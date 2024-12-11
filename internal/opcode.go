@@ -127,7 +127,15 @@ const (
 
 func isStoreInstruction(opcode byte) bool {
 	switch Opcode(opcode) {
-	case STA, STB, STCH, STF, STI, STL, STS, STSW, STT, STX:
+	case STA, STB, STCH, STF, STL, STS, STSW, STT, STX:
+		return true
+	}
+	return false
+}
+
+func isJumpInstruction(opcode byte) bool {
+	switch Opcode(opcode) {
+	case J, JEQ, JGT, JLT, JSUB:
 		return true
 	}
 	return false

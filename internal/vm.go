@@ -329,13 +329,12 @@ func getIndirectionLevel(opcode, ni byte) int {
 	switch AddressingMode(ni) {
 	case IMMEDIATE:
 		level = 0
-	case DIRECT:
-	case SIC:
+	case DIRECT, SIC:
 		level = 1
 	case INDIRECT:
 		level = 2
 	}
-	if isStoreInstruction(opcode) {
+	if isStoreInstruction(opcode) || isJumpInstruction(opcode) {
 		level--
 	}
 	return level
