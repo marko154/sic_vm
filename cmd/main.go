@@ -2,26 +2,30 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	vm "sic_vm/internal"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
+	debug := flag.Bool("debug", false, "enable debug logging")
 	flag.Parse()
 
+	if *debug {
+		log.SetLevel(log.DebugLevel)
+	}
+
 	if flag.NArg() < 1 {
-		fmt.Println("missing filename")
-		fmt.Println("usage: sic_vm <filename>")
-		os.Exit(1)
+		log.Error("missing filename")
+		log.Fatal("usage: sic_vm <filename>")
 	}
 
 	filename := flag.Arg(0)
 	file, err := os.Open(filename)
 
 	if err != nil {
-		fmt.Printf("error: Failed to open '%s': %v\n", filename, err)
-		os.Exit(1)
+		log.Fatalf("error: Failed to open '%s': %v\n", filename, err)
 	}
 
 	defer file.Close()
@@ -29,12 +33,10 @@ func main() {
 	vm := vm.NewVM(file)
 
 	if err := vm.Load(); err != nil {
-		fmt.Printf("error: Failed to load '%s': %v\n", filename, err)
-		os.Exit(1)
+		log.Fatalf("error: Failed to load '%s': %v\n", filename, err)
 	}
 
 	if err = vm.Run(); err != nil {
-		fmt.Printf("failed to run program %v\n", err)
-		os.Exit(1)
+		log.Fatalf("failed to run program %v\n", err)
 	}
 }

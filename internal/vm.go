@@ -1,9 +1,10 @@
 package vm
 
 import (
-	"fmt"
 	"io"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type VM struct {
@@ -76,7 +77,7 @@ func (vm *VM) fetch() (byte, error) {
 
 func (vm *VM) execute(opcodeByte byte) error {
 	opcode := opcodeByte & 0xFC
-	fmt.Printf("executing opcode %v\n", Opcode(opcode))
+	log.Debugf("executing opcode %v\n", Opcode(opcode))
 	ni := opcodeByte & 0x03
 	if executed, err := vm.tryExecuteF1(opcode); executed || err != nil {
 		return err
@@ -155,7 +156,6 @@ func (vm *VM) tryExecuteF2(opcode, operands byte) (bool, error) {
 
 func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	effectiveAddress, err := vm.getEffectiveAddress(ni, operand)
-	fmt.Println("effective address", effectiveAddress)
 	if err != nil {
 		return err
 	}
@@ -184,7 +184,6 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	case DIVF:
 		return notImplementedError(DIVF)
 	case J:
-		fmt.Println("Jumping to ", operandValue)
 		vm.Registers.PC = operandValue
 	case JEQ:
 		if vm.Registers.GetCC() == CC_EQ {
