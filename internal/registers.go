@@ -12,15 +12,6 @@ const (
 	CC_UNDEFINED ConditionCode = 0b11
 )
 
-type AddressingMode int
-
-const (
-	IMMEDIATE AddressingMode = 0b01
-	DIRECT    AddressingMode = 0b10
-	INDIRECT  AddressingMode = 0b11
-	SIC       AddressingMode = 0b00
-)
-
 // https://sic-xe.github.io/chapters/sic.html
 type Registers struct {
 	A  int // accumulator

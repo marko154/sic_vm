@@ -6,6 +6,15 @@ import (
 	"fmt"
 )
 
+type AddressingMode int
+
+const (
+	IMMEDIATE AddressingMode = 0b01
+	DIRECT    AddressingMode = 0b11
+	INDIRECT  AddressingMode = 0b10
+	SIC       AddressingMode = 0b00
+)
+
 type Memory [MAX_ADDRESS]byte
 
 const MAX_ADDRESS = 1 << 20

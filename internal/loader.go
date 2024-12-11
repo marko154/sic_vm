@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"io"
 )
 
@@ -12,25 +13,34 @@ func NewLoader(reader io.Reader) *Loader {
 	return &Loader{Reader: NewReader(reader)}
 }
 
+// TODO: refactor this, Loader doesn't need the entire VM struct
 func (l *Loader) Load(vm *VM) error {
 	for {
-		recordType, err := l.Reader.ReadByte()
+		recordType, err := l.Reader.ReadString(1)
 		if err == io.EOF {
 			break
 		}
 
 		switch recordType {
-		case 'H':
+		case "H":
 			err = l.readHRecord(vm)
-		case 'T':
+		case "T":
 			err = l.readTRecord(vm)
-		case 'E':
+		case "E":
 			err = l.readERecord(vm)
 		}
 		if err != nil {
 			return err
 		}
+		// skip newline
+		if _, err := l.Reader.ReadString(1); err != nil {
+			return fmt.Errorf("failed to read newline: %v", err)
+		}
 	}
+
+	// for i := 0; i < 25; i++ {
+	// 	fmt.Printf("%d: %x\n", i, vm.Memory[i])
+	// }
 
 	return nil
 }

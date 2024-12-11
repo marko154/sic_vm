@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"io"
 	"os"
 )
@@ -23,8 +24,9 @@ func NewVM(reader io.Reader) *VM {
 		Registers: NewRegisters(),
 	}
 	vm.SetDevice(0, NewInputDevice(os.Stdin))
-	vm.SetDevice(1, NewInputDevice(os.Stdout))
-	vm.SetDevice(2, NewInputDevice(os.Stderr))
+	vm.SetDevice(1, NewOutputDevice(os.Stdout))
+	vm.SetDevice(2, NewOutputDevice(os.Stderr))
+	// TODO: set file devices
 	return vm
 }
 
@@ -46,12 +48,9 @@ func (vm *VM) SetDevice(num int, device Device) {
 
 func (vm *VM) Run() error {
 	vm.Registers.PC = vm.StartAddress
-	prevPC := -1
 
 	for {
-		if prevPC == vm.Registers.PC {
-			break // HALT
-		}
+		prevPC := vm.Registers.PC
 		opcode, err := vm.fetch()
 		if err != nil {
 			return err
@@ -59,7 +58,13 @@ func (vm *VM) Run() error {
 		if err := vm.execute(opcode); err != nil {
 			return err
 		}
-		prevPC = vm.Registers.PC
+		fmt.Println("prev, curr PC", prevPC, vm.Registers.PC)
+		if vm.Registers.PC > 20 {
+			break
+		}
+		if prevPC == vm.Registers.PC {
+			break // HALT
+		}
 	}
 	return nil
 }
@@ -75,6 +80,7 @@ func (vm *VM) fetch() (byte, error) {
 
 func (vm *VM) execute(opcodeByte byte) error {
 	opcode := opcodeByte & 0xFC
+	fmt.Printf("executing opcode %v\n", Opcode(opcode))
 	ni := opcodeByte & 0x03
 	if executed, err := vm.tryExecuteF1(opcode); executed || err != nil {
 		return err
@@ -86,8 +92,7 @@ func (vm *VM) execute(opcodeByte byte) error {
 	if executed, err := vm.tryExecuteF2(opcode, operand); executed || err != nil {
 		return err
 	}
-	vm.tryExecuteTypeSICF3F4(opcode, ni, operand)
-	return nil
+	return vm.tryExecuteTypeSICF3F4(opcode, ni, operand)
 }
 
 func (vm *VM) tryExecuteF1(opcode byte) (bool, error) {
@@ -97,13 +102,13 @@ func (vm *VM) tryExecuteF1(opcode byte) (bool, error) {
 	case FLOAT:
 		vm.Registers.F = float64(vm.Registers.A)
 	case HIO:
-		return false, notImplementedError(HIO)
+		return true, notImplementedError(HIO)
 	case NORM:
-		return false, notImplementedError(NORM) // what does this even do?
+		return true, notImplementedError(NORM) // what does this even do?
 	case SIO:
-		return false, notImplementedError(SIO)
+		return true, notImplementedError(SIO)
 	case TIO:
-		return false, notImplementedError(TIO)
+		return true, notImplementedError(TIO)
 	default:
 		return false, nil
 	}
@@ -146,12 +151,15 @@ func (vm *VM) tryExecuteF2(opcode, operands byte) (bool, error) {
 		vm.Registers.X++
 		r := vm.Registers.GetReg(r1)
 		vm.Registers.SetCC(getConditionCodes(vm.Registers.X, r))
+	default:
+		return false, nil
 	}
 	return true, nil
 }
 
 func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	effectiveAddress, err := vm.getEffectiveAddress(ni, operand)
+	fmt.Println("effective address", effectiveAddress)
 	if err != nil {
 		return err
 	}
@@ -180,6 +188,7 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	case DIVF:
 		return notImplementedError(DIVF)
 	case J:
+		fmt.Println("Jumping to ", operandValue)
 		vm.Registers.PC = operandValue
 	case JEQ:
 		if vm.Registers.GetCC() == CC_EQ {
@@ -261,8 +270,8 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 		vm.Registers.X++
 		vm.Registers.SetCC(getConditionCodes(vm.Registers.X, operandValue))
 	case WD:
-		err := vm.GetDevice(operandValue).Write(byte(vm.Registers.A))
-		if err != nil {
+		device := vm.GetDevice(operandValue)
+		if err := device.Write(byte(vm.Registers.A)); err != nil {
 			return err
 		}
 	default:
@@ -277,11 +286,11 @@ func (vm *VM) getEffectiveAddress(ni, operand byte) (int, error) {
 		return 0, err
 	}
 	mask := byte(0x0F)
-	if (ni) == byte(SIC) {
+	if AddressingMode(ni) == SIC {
 		mask = 0x7F
 	}
-	offset := int((operand&mask))<<8 + int(third)
-	addrMode := getAddressMode((operand >> 4) & 0xF0)
+	offset := extendSign(int((operand&mask))<<8+int(third), 12)
+	addrMode := getAddressMode((operand >> 4) & 0x0F)
 	if addrMode.E {
 		fourth, err := vm.fetch()
 		if err != nil {

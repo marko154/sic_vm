@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"os"
@@ -27,13 +26,15 @@ func main() {
 
 	defer file.Close()
 
-	reader := bufio.NewReader(file)
-	vm := vm.NewVM(reader)
+	vm := vm.NewVM(file)
 
 	if err := vm.Load(); err != nil {
 		fmt.Printf("error: Failed to load '%s': %v\n", filename, err)
 		os.Exit(1)
 	}
 
-	vm.Run()
+	if err = vm.Run(); err != nil {
+		fmt.Printf("failed to run program %v\n", err)
+		os.Exit(1)
+	}
 }

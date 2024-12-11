@@ -46,6 +46,7 @@ func (d *OutputDevice) Read() (byte, error) {
 }
 
 func (d *OutputDevice) Write(value byte) error {
+	defer d.writer.Flush()
 	return d.writer.WriteByte(value)
 }
 func (d *OutputDevice) Test() bool {
