@@ -1,0 +1,6 @@
+00000            primer  START   0    
+00000  D90000    first   RD      #0    
+00003  DD0001            WD      #1    
+00006  3F2FFD    halt    J       halt    
+                  . data
+00009                    END     first    
