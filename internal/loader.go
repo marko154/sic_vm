@@ -38,10 +38,6 @@ func (l *Loader) Load(vm *VM) error {
 		}
 	}
 
-	// for i := 0; i < 25; i++ {
-	// 	fmt.Printf("%d: %x\n", i, vm.Memory[i])
-	// }
-
 	return nil
 }
 

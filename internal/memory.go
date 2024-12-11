@@ -41,11 +41,13 @@ func (mem *Memory) SetByte(address int, value byte) error {
 	return nil
 }
 
+// TODO: !!! is sign extension needed anywhere else ? !!!
 func (mem *Memory) GetWord(address int) (int, error) {
 	if err := mem.ValidateAddress(address + 2); err != nil {
 		return 0, err
 	}
-	return int(mem[address])<<16 | int(mem[address+1])<<8 | int(mem[address+2]), nil
+	value := int(mem[address])<<16 | int(mem[address+1])<<8 | int(mem[address+2])
+	return extendSign(value, 24), nil
 }
 
 func (mem *Memory) SetWord(address, value int) error {

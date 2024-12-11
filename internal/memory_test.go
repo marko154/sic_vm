@@ -1,6 +1,8 @@
 package vm
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestByteOperations(t *testing.T) {
 	mem := Memory{}
@@ -36,7 +38,7 @@ func TestByteOperations(t *testing.T) {
 func TestWordOperations(t *testing.T) {
 	mem := Memory{}
 	mem.SetWord(0, 0x123456)
-	mem.SetWord(12345, 0xabcdef)
+	mem.SetWord(12345, -1)
 	value, err := mem.GetWord(0)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
@@ -48,8 +50,8 @@ func TestWordOperations(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
-	if value != 0xabcdef {
-		t.Errorf("Expected 0xabcdef, got %v", value)
+	if value != -1 {
+		t.Errorf("Expected -1, got %v", value)
 	}
 }
 
