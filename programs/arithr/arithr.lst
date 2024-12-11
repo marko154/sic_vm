@@ -1,0 +1,34 @@
+00000            arithr  START   0    
+00000  6F202C    start   LDS     x    . sum
+00003  77202C            LDT     y    
+00006  AC50              RMO     T,A    
+00008  9040              ADDR    S,A    
+0000A  0F2028            STA     sum    
+                  . diff
+0000D  AC40              RMO     S,A    
+0000F  9450              SUBR    T,A    
+00011  0F2024            STA     diff    
+                  . prod
+00014  AC50              RMO     T,A    
+00016  9840              MULR    S,A    
+00018  0F2020            STA     prod    
+                  . quot
+0001B  032011            LDA     x    
+0001E  AC40              RMO     S,A    
+00020  9C50              DIVR    T,A    
+00022  0F2019            STA     quot    
+                  . mod TODO:
+00025  9850              MULR    T,A    
+00027  9404              SUBR    A,S    
+                  . SUBR	x*y - (x/y) * y
+00029  7F2015            STS     mod    
+0002C  3F2FFD    halt    J       halt    
+                  . podatki
+0002F  000009    x       WORD    9    
+00032  000002    y       WORD    2    
+00035  000000    sum     WORD    0    
+00038  000000    diff    WORD    0    
+0003B  000000    prod    WORD    0    
+0003E  000000    quot    WORD    0    
+00041  000000    mod     WORD    0    
+00044                    END     start    

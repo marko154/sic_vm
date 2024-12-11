@@ -28,6 +28,10 @@ func (l *Loader) Load(vm *VM) error {
 			err = l.readTRecord(vm)
 		case "E":
 			err = l.readERecord(vm)
+		case "M":
+			err = l.readMRecord()
+		default:
+			return fmt.Errorf("record type %v not implemented", recordType)
 		}
 		if err != nil {
 			return err
@@ -87,5 +91,18 @@ func (l *Loader) readTRecord(vm *VM) error {
 		vm.Memory.SetByte(address+offset, value)
 	}
 
+	return nil
+}
+
+func (l *Loader) readMRecord() error {
+	_, err := l.Reader.ReadWord()
+	if err != nil {
+		return err
+	}
+	_, err = l.Reader.ReadByte()
+	if err != nil {
+		return err
+	}
+	// TODO: peek at the next byte to determine if it's a plus or minus and process the rest
 	return nil
 }

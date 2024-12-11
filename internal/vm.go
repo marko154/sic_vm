@@ -284,8 +284,12 @@ func (vm *VM) getEffectiveAddress(ni, operand byte) (int, error) {
 	if AddressingMode(ni) == SIC {
 		mask = 0x7F
 	}
-	offset := extendSign(int((operand&mask))<<8+int(third), 12)
-	addrMode := getAddressMode((operand >> 4) & 0x0F)
+	offset := int((operand&mask))<<8 + int(third)
+	addrMode := getAddressCalcMode((operand >> 4) & 0x0F)
+	// only extend sign when address is pc relative (who's fucking idea was this?)
+	if addrMode.P {
+		offset = extendSign(offset, 12)
+	}
 	if addrMode.E {
 		fourth, err := vm.fetch()
 		if err != nil {
@@ -314,7 +318,7 @@ type AddressCalculationMode struct {
 	E bool // extended format
 }
 
-func getAddressMode(xbpe byte) AddressCalculationMode {
+func getAddressCalcMode(xbpe byte) AddressCalculationMode {
 	return AddressCalculationMode{
 		X: xbpe&0b1000 != 0,
 		B: xbpe&0b0100 != 0,

@@ -1,0 +1,48 @@
+00000            prog     START   0    
+00000  4B2038             JSUB    sinit    
+00003  010006             LDA     #6    
+00006  4B2003             JSUB    fact    
+00009  3F2FFD    halt     J       halt    
+                  
+0000C  290000    fact     COMP    #0    
+0000F  332023             JEQ     base    
+                  
+00012  160C26             STL     @sp    
+00015  4B2032             JSUB    spush    
+00018  0E0C26             STA     @sp    
+0001B  4B202C             JSUB    spush    
+                  
+0001E  1D0001             SUB     #1    
+00021  4B2FE8             JSUB    fact    
+                  
+00024  4B2035             JSUB    spop    
+00027  6A0C26             LDB     @sp    
+0002A  4B202F             JSUB    spop    
+0002D  0A0C26             LDL     @sp    
+00030  9830               MULR    B,A    
+00032  3F2003             J       factRet    
+00035  010001    base     LDA     #1    
+00038  4F0000    factRet  RSUB        
+                  
+0003B  0F0C29    sinit    STA     stackA    
+0003E  01202D             LDA     #stack    
+00041  0F0C26             STA     sp    
+00044  030C29             LDA     stackA    
+00047  4F0000             RSUB        
+0004A  0F0C29    spush    STA     stackA    
+0004D  030C26             LDA     sp    
+00050  190003             ADD     #3    
+00053  0F0C26             STA     sp    
+00056  030C29             LDA     stackA    
+00059  4F0000             RSUB        
+0005C  0F0C29    spop     STA     stackA    
+0005F  030C26             LDA     sp    
+00062  1D0003             SUB     #3    
+00065  0F0C26             STA     sp    
+00068  030C29             LDA     stackA    
+0006B  4F0000             RSUB        
+                  
+0006E  00....00  stack    RESW    1000    
+00C26  000000    sp       WORD    0    
+00C29  000000    stackA   WORD    0    
+00C2C                     END     prog    

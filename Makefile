@@ -10,7 +10,7 @@ build:
 device:
 	@echo "Building..."
 	@go build -o main cmd/main.go
-	@./main programs/device.obj
+	@./main programs/device/device.obj
 
 # Run tests
 test:

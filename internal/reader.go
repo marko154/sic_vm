@@ -26,7 +26,6 @@ func (r *Reader) ReadByte() (byte, error) {
 	if err != nil {
 		return 0, err
 	}
-	// this is wrong use strconv.parseuint(txt, 16, 8)
 	parsedValue, err := strconv.ParseUint(string(buf), 16, 8)
 	if err != nil {
 		return 0, err
@@ -55,5 +54,6 @@ func (r *Reader) ReadWord() (int, error) {
 	}
 
 	word := int(b1)<<16 | int(b2)<<8 | int(b3)
+	// TODO: should we extend sign here? i hate this fucking thing
 	return word, err
 }

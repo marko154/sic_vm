@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/cmd/main.go",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            "args": ["programs/device.obj"]
+            "args": ["programs/device/device.obj"]
         }
     ]
 }
