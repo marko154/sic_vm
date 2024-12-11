@@ -1,5 +1,5 @@
-primer	START   0
-arith	LDA     x
+arith	START   0
+start	LDA     x
 	ADD     y
 	STA     sum
 	.diff
@@ -31,4 +31,4 @@ prod	WORD    0
 quot	WORD    0
 mod	WORD    0
 temp	WORD    0
-	END    arith
+	END    start

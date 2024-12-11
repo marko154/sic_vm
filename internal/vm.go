@@ -58,10 +58,6 @@ func (vm *VM) Run() error {
 		if err := vm.execute(opcode); err != nil {
 			return err
 		}
-		fmt.Println("prev, curr PC", prevPC, vm.Registers.PC)
-		if vm.Registers.PC > 20 {
-			break
-		}
 		if prevPC == vm.Registers.PC {
 			break // HALT
 		}

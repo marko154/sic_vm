@@ -5,13 +5,13 @@ Blocks
     <default>   00000  00051    19   10    0
 Symbols
     name        hex       dec  scope     kind      type      description
-    arith    000000         0  local     relative  code      label
+    arith    000000         0  exported  relative  code      label
     diff     000042        66  local     relative  data      label
     halt     000036        54  local     relative  code      label
     mod      00004B        75  local     relative  data      label
-    primer   000000         0  exported  relative  code      label
     prod     000045        69  local     relative  data      label
     quot     000048        72  local     relative  data      label
+    start    000000         0  local     relative  code      label
     sum      00003F        63  local     relative  data      label
     temp     00004E        78  local     relative  data      label
     x        000039        57  local     relative  data      label

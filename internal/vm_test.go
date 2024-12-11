@@ -1,28 +1,47 @@
 package vm
 
 import (
-	"bytes"
+	"os"
 	"testing"
 )
 
-func TestLoad(t *testing.T) {
-	// vm := NewVM()
-	// vm.Load("layout.obj") // TODO: create a simple file to test if it loads correctly into memory
-
-	// assert that memory
+func runVMTestProgram(filename string) (*VM, error) {
+	reader, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	vm := NewVM(reader)
+	if err := vm.Load(); err != nil {
+		return vm, err
+	}
+	return vm, vm.Run()
 }
 
-func TestGetEffectiveAddress(t *testing.T) {
-	reader := bytes.NewReader([]byte{0x10, 0x00})
-	vm := NewVM(reader)
-	vm.Registers.B = 123
-	vm.Registers.X = 0x100
-	vm.Memory.SetByte(0, byte(LDA)|byte(IMMEDIATE))
-	address, err := vm.getEffectiveAddress(0b11, 0x10)
+func TestArithmetic(t *testing.T) {
+	vm, err := runVMTestProgram("../programs/arith.obj")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
-	if address != 0x1100 {
-		t.Errorf("Expected 0x1100, got %x", address)
+	// x=9, y=2
+	sum, _ := vm.Memory.GetWord(0x3f)
+	diff, _ := vm.Memory.GetWord(0x42)
+	prod, _ := vm.Memory.GetWord(0x45)
+	quot, _ := vm.Memory.GetWord(0x48)
+	mod, _ := vm.Memory.GetWord(0x4b)
+
+	if sum != 11 {
+		t.Errorf("Expected 11, got %d", sum)
+	}
+	if diff != 7 {
+		t.Errorf("Expected 7, got %d", diff)
+	}
+	if prod != 18 {
+		t.Errorf("Expected 18, got %d", prod)
+	}
+	if quot != 4 {
+		t.Errorf("Expected 4, got %d", quot)
+	}
+	if mod != 1 {
+		t.Errorf("Expected 1, got %d", mod)
 	}
 }
