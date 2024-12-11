@@ -83,7 +83,7 @@ func (l *Loader) readTRecord(vm *VM) error {
 	if err != nil {
 		return err
 	}
-	for offset := 0; offset < int(length); offset++ {
+	for offset := int32(0); offset < int32(length); offset++ {
 		value, err := l.Reader.ReadByte()
 		if err != nil {
 			return err

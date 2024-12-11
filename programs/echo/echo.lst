@@ -1,0 +1,118 @@
+00000            echo     START   0    
+00000  4B20B4    first    JSUB    sinit    
+00003  01103039          +LDA     #12345    
+00007  4B206D             JSUB    num    
+0000A  4B2013             JSUB    nl    
+0000D  01100CA8          +LDA     #txt    
+00011  4B2021             JSUB    string    
+00014  4B2009             JSUB    nl    
+00017  3F2FFD    halt     J       halt    
+                  
+                  . print char in register A
+0001A  DD0001    char     WD      #1    
+0001D  4F0000             RSUB        
+                  
+                  . print new line
+00020  0F0CB5    nl       STA     nlA    
+00023  170CB8             STL     nlL    
+00026  51000A             LDCH    #10    
+00029  4B2FEE             JSUB    char    
+0002C  030CB5             LDA     nlA    
+0002F  0B0CB8             LDL     nlL    
+00032  4F0000             RSUB        
+                  
+                  . print a string from memory address stored in register A
+00035  170CC1    string   STL     stringL    
+00038  0F0CBE             STA     stringA    
+0003B  0F0CBB             STA     sAddr    
+0003E  B400      loop     CLEAR   A    
+00040  52100CBB          +LDCH    @sAddr    
+00044  290000             COMP    #0    
+00047  33200F             JEQ     break    
+0004A  4B2FCD             JSUB    char    
+0004D  030CBB             LDA     sAddr    
+00050  190001             ADD     #1    
+00053  0F0CBB             STA     sAddr    
+00056  3F2FE5             J       loop    
+00059  0B0CC1    break    LDL     stringL    
+0005C  030CBE             LDA     stringA    
+0005F  4F0000             RSUB        
+                  
+                  . A -> A % 10 TODO: improve this
+00062  870CC7    mod10    STT     modT    
+00065  AC05               RMO     A,T    
+00067  25000A             DIV     #10    
+0006A  21000A             MUL     #10    
+0006D  9405               SUBR    A,T    
+0006F  AC50               RMO     T,A    
+00071  770CC7             LDT     modT    
+00074  4F0000             RSUB        
+                  
+                  . int print_num(int a) {
+                  . if (a < 10) {
+                  . print(a);
+                  . } else {
+                  . print_num(a / 10);
+                  . print(a % 10);
+                  . }
+                  . }
+                  . print number in register A
+00077  160CA2    num      STL     @sp    
+0007A  4B2049             JSUB    spush    
+0007D  0E0CA2             STA     @sp    
+00080  4B2043             JSUB    spush    
+00083  860CA2             STT     @sp    
+00086  4B203D             JSUB    spush    
+                  
+00089  29000A             COMP    #10    
+0008C  3B200A             JLT     numEnd    
+0008F  AC05               RMO     A,T    
+00091  25000A             DIV     #10    
+00094  4B2FE0             JSUB    num    
+00097  AC50               RMO     T,A    
+00099  4B2FC6    numEnd   JSUB    mod10    
+0009C  190030             ADD     #48    
+0009F  DD0001             WD      #1    
+000A2  4B2033             JSUB    spop    
+000A5  760CA2             LDT     @sp    
+000A8  4B202D             JSUB    spop    
+000AB  020CA2             LDA     @sp    
+000AE  4B2027             JSUB    spop    
+000B1  0A0CA2             LDL     @sp    
+000B4  4F0000             RSUB        
+                  . initialize sp to the start of stack
+000B7  0F0CA5    sinit    STA     stackA    
+000BA  01202D             LDA     #stack    
+000BD  0F0CA2             STA     sp    
+000C0  030CA5             LDA     stackA    
+000C3  4F0000             RSUB        
+                  . inc sp
+000C6  0F0CA5    spush    STA     stackA    
+000C9  030CA2             LDA     sp    
+000CC  190003             ADD     #3    
+000CF  0F0CA2             STA     sp    
+000D2  030CA5             LDA     stackA    
+000D5  4F0000             RSUB        
+                  . dec sp
+000D8  0F0CA5    spop     STA     stackA    
+000DB  030CA2             LDA     sp    
+000DE  1D0003             SUB     #3    
+000E1  0F0CA2             STA     sp    
+000E4  030CA5             LDA     stackA    
+000E7  4F0000             RSUB        
+                  
+000EA  00....00  stack    RESW    1000    
+00CA2  000000    sp       WORD    0    
+00CA5  000000    stackA   WORD    0    
+                  
+00CA8  68....21  txt      BYTE    C'hello world!'    
+00CB4  00                 BYTE    0    
+00CB5  000000    nlA      RESW    1    
+00CB8  000000    nlL      RESW    1    
+00CBB  000000    sAddr    RESW    1    
+00CBE  000000    stringA  RESW    1    
+00CC1  000000    stringL  RESW    1    
+00CC4  000000    modB     RESW    1    
+00CC7  000000    modT     RESW    1    
+00CCA  000000    numL     RESW    1    
+00CCD                     END     first    

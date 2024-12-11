@@ -9,7 +9,7 @@ import (
 type ByteReader interface {
 	ReadByte() (byte, error)
 	ReadString(n int) (string, error)
-	ReadWord() (int, error)
+	ReadWord() (int32, error)
 }
 
 type Reader struct {
@@ -39,7 +39,7 @@ func (r *Reader) ReadString(n int) (string, error) {
 	return string(buf), err
 }
 
-func (r *Reader) ReadWord() (int, error) {
+func (r *Reader) ReadWord() (int32, error) {
 	b1, err := r.ReadByte()
 	if err != nil {
 		return 0, err
@@ -53,7 +53,8 @@ func (r *Reader) ReadWord() (int, error) {
 		return 0, err
 	}
 
-	word := int(b1)<<16 | int(b2)<<8 | int(b3)
+	word := int32(b1)<<16 | int32(b2)<<8 | int32(b3)
+	return extendSign(word, 24), nil
 	// TODO: should we extend sign here? i hate this fucking thing
-	return word, err
+	// return word, err
 }

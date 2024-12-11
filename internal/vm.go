@@ -10,24 +10,26 @@ import (
 type VM struct {
 	Memory       Memory
 	Registers    *Registers
-	Devices      map[int]Device // device number -> device
+	Devices      map[int32]Device // device number -> device
 	Loader       *Loader
 	ProgramName  string
-	CodeAddress  int
-	StartAddress int
-	CodeLength   int
+	CodeAddress  int32
+	StartAddress int32
+	CodeLength   int32
 }
 
 func NewVM(reader io.Reader) *VM {
 	vm := &VM{
 		Loader:    NewLoader(reader),
-		Devices:   make(map[int]Device),
+		Devices:   make(map[int32]Device),
 		Registers: NewRegisters(),
 	}
 	vm.SetDevice(0, NewInputDevice(os.Stdin))
 	vm.SetDevice(1, NewOutputDevice(os.Stdout))
 	vm.SetDevice(2, NewOutputDevice(os.Stderr))
-	// TODO: set file devices
+	for i := int32(3); i < 256; i++ {
+		vm.SetDevice(i, NewFileDevice(byte(i)))
+	}
 	return vm
 }
 
@@ -36,12 +38,12 @@ func (vm *VM) Load() error {
 }
 
 // TODO: bounds check?
-func (vm *VM) GetDevice(num int) Device {
+func (vm *VM) GetDevice(num int32) Device {
 	device := vm.Devices[num]
 	return device
 }
 
-func (vm *VM) SetDevice(num int, device Device) {
+func (vm *VM) SetDevice(num int32, device Device) {
 	vm.Devices[num] = device
 }
 
@@ -95,7 +97,7 @@ func (vm *VM) execute(opcodeByte byte) error {
 func (vm *VM) tryExecuteF1(opcode byte) (bool, error) {
 	switch Opcode(opcode) {
 	case FIX:
-		vm.Registers.A = int(vm.Registers.F)
+		vm.Registers.A = int32(vm.Registers.F)
 	case FLOAT:
 		vm.Registers.F = float64(vm.Registers.A)
 	case HIO:
@@ -159,6 +161,7 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	if err != nil {
 		return err
 	}
+	// TODO: refactor this completely, LDCH, STCH only need to read 1 byte
 	operandValue, err := vm.getOperandValue(opcode, ni, effectiveAddress)
 	if err != nil {
 		return err
@@ -205,7 +208,7 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	case LDB:
 		vm.Registers.B = operandValue
 	case LDCH:
-		vm.Registers.A |= operandValue & 0xFF
+		vm.Registers.A = (vm.Registers.A & (-256)) | (operandValue & 0xFF)
 	case LDF:
 		return notImplementedError(LDF)
 	case LDL:
@@ -229,8 +232,7 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 		if err != nil {
 			return err
 		}
-		vm.Registers.A &= 0xFFFFFF00
-		vm.Registers.A |= int(value)
+		vm.Registers.A = (vm.Registers.A & (-256)) | int32(value&0xFF)
 	case RSUB:
 		vm.Registers.PC = vm.Registers.L
 	case SSK: // no idea what this is
@@ -240,6 +242,7 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	case STB:
 		vm.Memory.SetWord(operandValue, vm.Registers.B)
 	case STCH:
+		// TODO: the general operandValue calculation won't work here
 		vm.Memory.SetByte(operandValue, byte(vm.Registers.A))
 	case STF:
 		return notImplementedError(STF)
@@ -275,7 +278,7 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	return nil
 }
 
-func (vm *VM) getEffectiveAddress(ni, operand byte) (int, error) {
+func (vm *VM) getEffectiveAddress(ni, operand byte) (int32, error) {
 	third, err := vm.fetch()
 	if err != nil {
 		return 0, err
@@ -284,7 +287,7 @@ func (vm *VM) getEffectiveAddress(ni, operand byte) (int, error) {
 	if AddressingMode(ni) == SIC {
 		mask = 0x7F
 	}
-	offset := int((operand&mask))<<8 + int(third)
+	offset := int32((operand&mask))<<8 + int32(third)
 	addrMode := getAddressCalcMode((operand >> 4) & 0x0F)
 	// only extend sign when address is pc relative (who's fucking idea was this?)
 	if addrMode.P {
@@ -295,9 +298,9 @@ func (vm *VM) getEffectiveAddress(ni, operand byte) (int, error) {
 		if err != nil {
 			return 0, err
 		}
-		offset = (offset << 8) + int(fourth)
+		offset = (offset << 8) + int32(fourth)
 	}
-	effectiveAddress := 0
+	var effectiveAddress int32 = 0
 	if addrMode.B {
 		effectiveAddress += vm.Registers.B
 	}
@@ -327,7 +330,7 @@ func getAddressCalcMode(xbpe byte) AddressCalculationMode {
 	}
 }
 
-func (vm *VM) getOperandValue(opcode, ni byte, effectiveAddress int) (int, error) {
+func (vm *VM) getOperandValue(opcode, ni byte, effectiveAddress int32) (int32, error) {
 	indirectionLevel := getIndirectionLevel(opcode, ni)
 	return vm.resolveAddress(effectiveAddress, indirectionLevel)
 }
@@ -348,7 +351,7 @@ func getIndirectionLevel(opcode, ni byte) int {
 	return level
 }
 
-func (vm *VM) resolveAddress(effectiveAddress, indirectionLevel int) (int, error) {
+func (vm *VM) resolveAddress(effectiveAddress int32, indirectionLevel int) (int32, error) {
 	for i := 0; i < indirectionLevel; i++ {
 		value, err := vm.Memory.GetWord(effectiveAddress)
 		if err != nil {

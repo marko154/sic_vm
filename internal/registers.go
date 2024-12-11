@@ -14,22 +14,22 @@ const (
 
 // https://sic-xe.github.io/chapters/sic.html
 type Registers struct {
-	A  int // accumulator
-	X  int // index register
-	L  int // linkage register (jumps)
-	B  int // base register
-	S  int
-	T  int
+	A  int32 // accumulator
+	X  int32 // index register
+	L  int32 // linkage register (jumps)
+	B  int32 // base register
+	S  int32
+	T  int32
 	F  float64
-	PC int
-	SW int // status word
+	PC int32
+	SW int32 // status word
 }
 
 func NewRegisters() *Registers {
 	return &Registers{}
 }
 
-func (registers *Registers) GetRegRef(idx int) *int {
+func (registers *Registers) GetRegRef(idx int) *int32 {
 	switch idx {
 	case 0:
 		return &registers.A
@@ -55,26 +55,26 @@ func (registers *Registers) GetRegRef(idx int) *int {
 	}
 }
 
-func (registers *Registers) GetReg(idx int) int {
+func (registers *Registers) GetReg(idx int) int32 {
 	regRef := registers.GetRegRef(idx)
 	return *regRef
 }
 
-func (registers *Registers) SetReg(idx int, val int) {
+func (registers *Registers) SetReg(idx int, val int32) {
 	regRef := registers.GetRegRef(idx)
 	*regRef = val
 }
 
 func (registers *Registers) SetCC(cc ConditionCode) {
 	registers.SW &= 0x00FFFF3F
-	registers.SW |= int(cc) << 6
+	registers.SW |= int32(cc) << 6
 }
 
 func (registers *Registers) GetCC() ConditionCode {
 	return ConditionCode((registers.SW >> 6) & 0x03)
 }
 
-func getConditionCodes(r1Val, r2Val int) ConditionCode {
+func getConditionCodes(r1Val, r2Val int32) ConditionCode {
 	if r1Val == r2Val {
 		return CC_EQ
 	} else if r1Val < r2Val {

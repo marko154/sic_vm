@@ -19,21 +19,21 @@ type Memory [MAX_ADDRESS]byte
 
 const MAX_ADDRESS = 1 << 20
 
-func (mem *Memory) ValidateAddress(address int) error {
+func (mem *Memory) ValidateAddress(address int32) error {
 	if address < 0 || address >= MAX_ADDRESS {
 		return fmt.Errorf("invalid address: %d", address)
 	}
 	return nil
 }
 
-func (mem *Memory) GetByte(address int) (byte, error) {
+func (mem *Memory) GetByte(address int32) (byte, error) {
 	if err := mem.ValidateAddress(address); err != nil {
 		return 0, err
 	}
 	return mem[address], nil
 }
 
-func (mem *Memory) SetByte(address int, value byte) error {
+func (mem *Memory) SetByte(address int32, value byte) error {
 	if err := mem.ValidateAddress(address); err != nil {
 		return err
 	}
@@ -41,16 +41,17 @@ func (mem *Memory) SetByte(address int, value byte) error {
 	return nil
 }
 
-// TODO: !!! is sign extension needed anywhere else ? !!!
-func (mem *Memory) GetWord(address int) (int, error) {
+func (mem *Memory) GetWord(address int32) (int32, error) {
 	if err := mem.ValidateAddress(address + 2); err != nil {
 		return 0, err
 	}
-	value := int(mem[address])<<16 | int(mem[address+1])<<8 | int(mem[address+2])
+	value := int32(mem[address])<<16 | int32(mem[address+1])<<8 | int32(mem[address+2])
+	// ??? is sign extension needed anywhere else ???
 	return extendSign(value, 24), nil
+	// return value, nil
 }
 
-func (mem *Memory) SetWord(address, value int) error {
+func (mem *Memory) SetWord(address, value int32) error {
 	if err := mem.ValidateAddress(address + 2); err != nil {
 		return err
 	}
@@ -61,7 +62,7 @@ func (mem *Memory) SetWord(address, value int) error {
 }
 
 // GetFloat reads a 48-bit floating point number from the memory. The floating point value is in the last 4 bytes of the 6 byte section
-func (mem *Memory) GetFloat(address int) (float32, error) {
+func (mem *Memory) GetFloat(address int32) (float32, error) {
 	if err := mem.ValidateAddress(address + 5); err != nil {
 		return 0, err
 	}
@@ -75,7 +76,7 @@ func (mem *Memory) GetFloat(address int) (float32, error) {
 	return value, nil
 }
 
-func (mem *Memory) SetFloat(address int, value float32) error {
+func (mem *Memory) SetFloat(address int32, value float32) error {
 	if err := mem.ValidateAddress(address + 5); err != nil {
 		return err
 	}
