@@ -156,6 +156,9 @@ func (vm *VM) tryExecuteF2(opcode, operands byte) (bool, error) {
 	return true, nil
 }
 
+// load, arithmetic, device instructions resolve the address the same way
+// store instructions have one level of indirection less
+// jump instructions have one level of indirection less
 func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	effectiveAddress, err := vm.getEffectiveAddress(ni, operand)
 	if err != nil {
@@ -189,24 +192,24 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	case COMP:
 		cc := getConditionCodes(vm.Registers.A, operandValue)
 		vm.Registers.SetCC(cc)
-	// jump instructions
+	// jump instructions - only immediate addressing supported
 	case J:
-		vm.Registers.PC = operandValue
+		vm.Registers.PC = effectiveAddress
 	case JEQ:
 		if vm.Registers.GetCC() == CC_EQ {
-			vm.Registers.PC = operandValue
+			vm.Registers.PC = effectiveAddress
 		}
 	case JGT:
 		if vm.Registers.GetCC() == CC_GT {
-			vm.Registers.PC = operandValue
+			vm.Registers.PC = effectiveAddress
 		}
 	case JLT:
 		if vm.Registers.GetCC() == CC_LT {
-			vm.Registers.PC = operandValue
+			vm.Registers.PC = effectiveAddress
 		}
 	case JSUB:
 		vm.Registers.L = vm.Registers.PC
-		vm.Registers.PC = operandValue
+		vm.Registers.PC = effectiveAddress
 	case RSUB:
 		vm.Registers.PC = vm.Registers.L
 	// load instructions
