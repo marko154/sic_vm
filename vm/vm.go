@@ -50,19 +50,30 @@ func (vm *VM) SetDevice(num byte, device Device) {
 func (vm *VM) Run() error {
 	vm.Registers.PC = vm.StartAddress
 	for {
-		prevPC := vm.Registers.PC
-		opcode, err := vm.fetch()
+		done, err := vm.Step()
 		if err != nil {
 			return err
 		}
-		if err := vm.execute(opcode); err != nil {
-			return err
-		}
-		if prevPC == vm.Registers.PC {
-			break // HALT
+		if done {
+			break
 		}
 	}
 	return nil
+}
+
+func (vm *VM) Step() (bool, error) {
+	prevPC := vm.Registers.PC
+	opcode, err := vm.fetch()
+	if err != nil {
+		return false, err
+	}
+	if err := vm.execute(opcode); err != nil {
+		return false, err
+	}
+	if prevPC == vm.Registers.PC {
+		return true, nil
+	}
+	return false, nil
 }
 
 func (vm *VM) fetch() (byte, error) {
@@ -165,26 +176,26 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	switch Opcode(opcode) {
 	// arithmetic/logic/simple instructions
 	case ADD:
-		vm.Registers.A += vm.LoadWord(ni, effectiveAddress)
+		vm.Registers.A += vm.loadWord(ni, effectiveAddress)
 	case AND:
-		vm.Registers.A &= vm.LoadWord(ni, effectiveAddress)
+		vm.Registers.A &= vm.loadWord(ni, effectiveAddress)
 	case DIV:
-		divisor := vm.LoadWord(ni, effectiveAddress)
+		divisor := vm.loadWord(ni, effectiveAddress)
 		if divisor == 0 {
 			return zeroDivisionError()
 		}
 		vm.Registers.A /= divisor
 	case MUL:
-		vm.Registers.A *= vm.LoadWord(ni, effectiveAddress)
+		vm.Registers.A *= vm.loadWord(ni, effectiveAddress)
 	case SUB:
-		vm.Registers.A -= vm.LoadWord(ni, effectiveAddress)
+		vm.Registers.A -= vm.loadWord(ni, effectiveAddress)
 	case OR:
-		vm.Registers.A |= vm.LoadWord(ni, effectiveAddress)
+		vm.Registers.A |= vm.loadWord(ni, effectiveAddress)
 	case TIX:
 		vm.Registers.X++
-		vm.Registers.Compare(vm.Registers.X, vm.LoadWord(ni, effectiveAddress))
+		vm.Registers.Compare(vm.Registers.X, vm.loadWord(ni, effectiveAddress))
 	case COMP:
-		vm.Registers.Compare(vm.Registers.A, vm.LoadWord(ni, effectiveAddress))
+		vm.Registers.Compare(vm.Registers.A, vm.loadWord(ni, effectiveAddress))
 	// jump instructions - only immediate addressing supported
 	case J:
 		vm.Registers.PC = effectiveAddress
@@ -207,49 +218,49 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 		vm.Registers.PC = vm.Registers.L
 	// load instructions
 	case LDA:
-		vm.Registers.A = vm.LoadWord(ni, effectiveAddress)
+		vm.Registers.A = vm.loadWord(ni, effectiveAddress)
 	case LDB:
-		vm.Registers.B = vm.LoadWord(ni, effectiveAddress)
+		vm.Registers.B = vm.loadWord(ni, effectiveAddress)
 	case LDCH:
-		value := vm.LoadByte(ni, effectiveAddress)
+		value := vm.loadByte(ni, effectiveAddress)
 		vm.Registers.A = (vm.Registers.A & (-256)) | int32(value)
 	case LDL:
-		vm.Registers.L = vm.LoadWord(ni, effectiveAddress)
+		vm.Registers.L = vm.loadWord(ni, effectiveAddress)
 	case LDS:
-		vm.Registers.S = vm.LoadWord(ni, effectiveAddress)
+		vm.Registers.S = vm.loadWord(ni, effectiveAddress)
 	case LDT:
-		vm.Registers.T = vm.LoadWord(ni, effectiveAddress)
+		vm.Registers.T = vm.loadWord(ni, effectiveAddress)
 	case LDX:
-		vm.Registers.X = vm.LoadWord(ni, effectiveAddress)
+		vm.Registers.X = vm.loadWord(ni, effectiveAddress)
 	// store instructions
 	case STA:
-		vm.StoreWord(ni, effectiveAddress, vm.Registers.A)
+		vm.storeWord(ni, effectiveAddress, vm.Registers.A)
 	case STB:
-		vm.StoreWord(ni, effectiveAddress, vm.Registers.B)
+		vm.storeWord(ni, effectiveAddress, vm.Registers.B)
 	case STCH:
-		vm.StoreByte(ni, effectiveAddress, byte(vm.Registers.A))
+		vm.storeByte(ni, effectiveAddress, byte(vm.Registers.A))
 	case STL:
-		vm.StoreWord(ni, effectiveAddress, vm.Registers.L)
+		vm.storeWord(ni, effectiveAddress, vm.Registers.L)
 	case STS:
-		vm.StoreWord(ni, effectiveAddress, vm.Registers.S)
+		vm.storeWord(ni, effectiveAddress, vm.Registers.S)
 	case STSW:
-		vm.StoreWord(ni, effectiveAddress, vm.Registers.SW)
+		vm.storeWord(ni, effectiveAddress, vm.Registers.SW)
 	case STT:
-		vm.StoreWord(ni, effectiveAddress, vm.Registers.T)
+		vm.storeWord(ni, effectiveAddress, vm.Registers.T)
 	case STX:
-		vm.StoreWord(ni, effectiveAddress, vm.Registers.X)
+		vm.storeWord(ni, effectiveAddress, vm.Registers.X)
 	// device instructions
 	case RD:
-		deviceNum := vm.LoadByte(ni, effectiveAddress)
+		deviceNum := vm.loadByte(ni, effectiveAddress)
 		value, err := vm.GetDevice(deviceNum).Read()
 		if err != nil {
 			return err
 		}
 		vm.Registers.A = (vm.Registers.A & (-256)) | int32(value&0xFF)
 	case TD:
-		vm.GetDevice(vm.LoadByte(ni, effectiveAddress)).Test()
+		vm.GetDevice(vm.loadByte(ni, effectiveAddress)).Test()
 	case WD:
-		device := vm.GetDevice(vm.LoadByte(ni, effectiveAddress))
+		device := vm.GetDevice(vm.loadByte(ni, effectiveAddress))
 		if err := device.Write(byte(vm.Registers.A)); err != nil {
 			return err
 		}
@@ -334,7 +345,7 @@ func getAddressCalcMode(xbpe byte) AddressCalculationMode {
 	}
 }
 
-func (vm *VM) LoadWord(ni byte, effectiveAddress int32) int32 {
+func (vm *VM) loadWord(ni byte, effectiveAddress int32) int32 {
 	if AddressingMode(ni) == IMMEDIATE {
 		return effectiveAddress
 	}
@@ -346,7 +357,7 @@ func (vm *VM) LoadWord(ni byte, effectiveAddress int32) int32 {
 	return value
 }
 
-func (vm *VM) LoadByte(ni byte, effectiveAddress int32) byte {
+func (vm *VM) loadByte(ni byte, effectiveAddress int32) byte {
 	if AddressingMode(ni) == IMMEDIATE {
 		return byte(effectiveAddress)
 	}
@@ -358,12 +369,12 @@ func (vm *VM) LoadByte(ni byte, effectiveAddress int32) byte {
 	return value
 }
 
-func (vm *VM) StoreWord(ni byte, effectiveAddress, value int32) error {
+func (vm *VM) storeWord(ni byte, effectiveAddress, value int32) error {
 	address := vm.resolveAddress(ni, effectiveAddress)
 	return vm.Memory.SetWord(address, value)
 }
 
-func (vm *VM) StoreByte(ni byte, effectiveAddress int32, value byte) error {
+func (vm *VM) storeByte(ni byte, effectiveAddress int32, value byte) error {
 	address := vm.resolveAddress(ni, effectiveAddress)
 	return vm.Memory.SetByte(address, value)
 }

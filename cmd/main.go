@@ -3,7 +3,8 @@ package main
 import (
 	"flag"
 	"os"
-	vm "sic_vm/internal"
+	"sic_vm/simulator"
+	"sic_vm/tui"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -30,13 +31,15 @@ func main() {
 
 	defer file.Close()
 
-	vm := vm.NewVM(file)
+	// vm := vm.NewVM(file)
+	sim := simulator.NewSimulator(file)
+	tui.Setup(sim)
 
-	if err := vm.Load(); err != nil {
-		log.Fatalf("error: Failed to load '%s': %v\n", filename, err)
-	}
+	// if err := vm.Load(); err != nil {
+	// 	log.Fatalf("error: Failed to load '%s': %v\n", filename, err)
+	// }
 
-	if err = vm.Run(); err != nil {
-		log.Fatalf("failed to run program %v\n", err)
-	}
+	// if err = vm.Run(); err != nil {
+	// 	log.Fatalf("failed to run program %v\n", err)
+	// }
 }

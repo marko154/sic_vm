@@ -27,6 +27,18 @@ type Registers struct {
 	SW int32 // status word
 }
 
+var RegisterNames map[int]string = map[int]string{
+	0: "A",
+	1: "X",
+	2: "L",
+	3: "B",
+	4: "S",
+	5: "T",
+	6: "F",
+	8: "PC",
+	9: "SW",
+}
+
 func NewRegisters() *Registers {
 	return &Registers{}
 }
