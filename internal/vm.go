@@ -47,11 +47,8 @@ func (vm *VM) SetDevice(num byte, device Device) {
 	vm.Devices[num] = device
 }
 
-// !!! warning: sign extension when using operands !!! ?
-
 func (vm *VM) Run() error {
 	vm.Registers.PC = vm.StartAddress
-
 	for {
 		prevPC := vm.Registers.PC
 		opcode, err := vm.fetch()
@@ -346,14 +343,7 @@ func (vm *VM) LoadWord(ni byte, effectiveAddress int32) int32 {
 	if AddressingMode(ni) == IMMEDIATE {
 		return effectiveAddress
 	}
-	address := effectiveAddress
-	if AddressingMode(ni) == INDIRECT {
-		value, err := vm.Memory.GetWord(effectiveAddress)
-		if err != nil {
-			panic(err)
-		}
-		address = value
-	}
+	address := vm.resolveAddress(ni, effectiveAddress)
 	value, err := vm.Memory.GetWord(address)
 	if err != nil {
 		panic(err)
@@ -362,14 +352,10 @@ func (vm *VM) LoadWord(ni byte, effectiveAddress int32) int32 {
 }
 
 func (vm *VM) LoadByte(ni byte, effectiveAddress int32) byte {
-	address := effectiveAddress
-	if AddressingMode(ni) == INDIRECT {
-		value, err := vm.Memory.GetWord(effectiveAddress)
-		if err != nil {
-			panic(err)
-		}
-		address = value
+	if AddressingMode(ni) == IMMEDIATE {
+		return byte(effectiveAddress)
 	}
+	address := vm.resolveAddress(ni, effectiveAddress)
 	value, err := vm.Memory.GetByte(address)
 	if err != nil {
 		panic(err)
@@ -378,36 +364,22 @@ func (vm *VM) LoadByte(ni byte, effectiveAddress int32) byte {
 }
 
 func (vm *VM) StoreWord(ni byte, effectiveAddress, value int32) error {
-	address := effectiveAddress
-	if AddressingMode(ni) == INDIRECT {
-		addr, err := vm.Memory.GetWord(effectiveAddress)
-		if err != nil {
-			return err
-		}
-		address = addr
-	}
+	address := vm.resolveAddress(ni, effectiveAddress)
 	return vm.Memory.SetWord(address, value)
 }
 
 func (vm *VM) StoreByte(ni byte, effectiveAddress int32, value byte) error {
-	address := effectiveAddress
-	if AddressingMode(ni) == INDIRECT {
-		addr, err := vm.Memory.GetWord(effectiveAddress)
-		if err != nil {
-			return err
-		}
-		address = addr
-	}
+	address := vm.resolveAddress(ni, effectiveAddress)
 	return vm.Memory.SetByte(address, value)
 }
 
-func (vm *VM) resolveAddress(effectiveAddress int32, indirectionLevel int) (int32, error) {
-	for i := 0; i < indirectionLevel; i++ {
-		value, err := vm.Memory.GetWord(effectiveAddress)
+func (vm *VM) resolveAddress(ni byte, address int32) int32 {
+	if AddressingMode(ni) == INDIRECT {
+		value, err := vm.Memory.GetWord(address)
 		if err != nil {
-			return 0, err
+			panic(err)
 		}
-		effectiveAddress = value
+		address = value
 	}
-	return effectiveAddress, nil
+	return address
 }
