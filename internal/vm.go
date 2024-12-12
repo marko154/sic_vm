@@ -171,25 +171,26 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	switch Opcode(opcode) {
 	// arithmetic/logic/simple instructions
 	case ADD:
-		vm.Registers.A += operandValue
+		vm.Registers.A += vm.LoadWord(ni, effectiveAddress)
 	case AND:
-		vm.Registers.A &= operandValue
+		vm.Registers.A &= vm.LoadWord(ni, effectiveAddress)
 	case DIV:
-		if operandValue == 0 {
+		divisor := vm.LoadWord(ni, effectiveAddress)
+		if divisor == 0 {
 			return zeroDivisionError()
 		}
-		vm.Registers.A /= operandValue
+		vm.Registers.A /= divisor
 	case MUL:
-		vm.Registers.A *= operandValue
+		vm.Registers.A *= vm.LoadWord(ni, effectiveAddress)
 	case SUB:
-		vm.Registers.A -= operandValue
+		vm.Registers.A -= vm.LoadWord(ni, effectiveAddress)
 	case OR:
-		vm.Registers.A |= operandValue
+		vm.Registers.A |= vm.LoadWord(ni, effectiveAddress)
 	case TIX:
 		vm.Registers.X++
-		vm.Registers.Compare(vm.Registers.X, operandValue)
+		vm.Registers.Compare(vm.Registers.X, vm.LoadWord(ni, effectiveAddress))
 	case COMP:
-		vm.Registers.Compare(vm.Registers.A, operandValue)
+		vm.Registers.Compare(vm.Registers.A, vm.LoadWord(ni, effectiveAddress))
 	// jump instructions - only immediate addressing supported
 	case J:
 		vm.Registers.PC = effectiveAddress
@@ -212,19 +213,20 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 		vm.Registers.PC = vm.Registers.L
 	// load instructions
 	case LDA:
-		vm.Registers.A = operandValue
+		vm.Registers.A = vm.LoadWord(ni, effectiveAddress)
 	case LDB:
-		vm.Registers.B = operandValue
+		vm.Registers.B = vm.LoadWord(ni, effectiveAddress)
 	case LDCH:
-		vm.Registers.A = (vm.Registers.A & (-256)) | (operandValue & 0xFF)
+		value := vm.LoadByte(ni, effectiveAddress)
+		vm.Registers.A = (vm.Registers.A & (-256)) | int32(value)
 	case LDL:
-		vm.Registers.L = operandValue
+		vm.Registers.L = vm.LoadWord(ni, effectiveAddress)
 	case LDS:
-		vm.Registers.S = operandValue
+		vm.Registers.S = vm.LoadWord(ni, effectiveAddress)
 	case LDT:
-		vm.Registers.T = operandValue
+		vm.Registers.T = vm.LoadWord(ni, effectiveAddress)
 	case LDX:
-		vm.Registers.X = operandValue
+		vm.Registers.X = vm.LoadWord(ni, effectiveAddress)
 	// store instructions
 	case STA:
 		vm.Memory.SetWord(operandValue, vm.Registers.A)
@@ -244,13 +246,13 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 		vm.Memory.SetWord(operandValue, vm.Registers.X)
 	// device instructions
 	case RD:
-		value, err := vm.GetDevice(operandValue).Read()
+		value, err := vm.GetDevice(vm.LoadByte(ni, effectiveAddress)).Read()
 		if err != nil {
 			return err
 		}
 		vm.Registers.A = (vm.Registers.A & (-256)) | int32(value&0xFF)
 	case TD:
-		vm.GetDevice(operandValue).Test()
+		vm.GetDevice(vm.LoadWord(ni, effectiveAddress)).Test()
 	case WD:
 		device := vm.GetDevice(operandValue)
 		if err := device.Write(byte(vm.Registers.A)); err != nil {
@@ -335,6 +337,47 @@ func getAddressCalcMode(xbpe byte) AddressCalculationMode {
 		P: xbpe&0b0010 != 0,
 		E: xbpe&0b0001 != 0,
 	}
+}
+
+// jump instructions have one level of indirection less - we can handle this by
+// always using immediate addressing (indirect adressing could be added, but is not needed)
+
+// load, arithmetic, device instructions resolve the address the same way
+// store instructions have one level of indirection less
+
+func (vm *VM) LoadWord(ni byte, effectiveAddress int32) int32 {
+	if AddressingMode(ni) == IMMEDIATE {
+		return effectiveAddress
+	}
+	address := effectiveAddress
+	if AddressingMode(ni) == INDIRECT {
+		value, err := vm.Memory.GetWord(effectiveAddress)
+		if err != nil {
+			panic(err)
+		}
+		address = value
+	}
+	value, err := vm.Memory.GetWord(address)
+	if err != nil {
+		panic(err)
+	}
+	return value
+}
+
+func (vm *VM) LoadByte(ni byte, effectiveAddress int32) byte {
+	address := effectiveAddress
+	if AddressingMode(ni) == INDIRECT {
+		value, err := vm.Memory.GetWord(effectiveAddress)
+		if err != nil {
+			panic(err)
+		}
+		address = value
+	}
+	value, err := vm.Memory.GetByte(address)
+	if err != nil {
+		panic(err)
+	}
+	return value
 }
 
 // TODO: refactor
