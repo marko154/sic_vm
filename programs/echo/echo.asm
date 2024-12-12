@@ -38,7 +38,7 @@ break	LDL	stringL
 	LDA	stringA
 	RSUB
 
-. A -> A % 10 TODO: improve this
+. A -> A % 10
 mod10	STT	modT
 	RMO	A, T
 	DIV	#10

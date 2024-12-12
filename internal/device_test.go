@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-// TODO: use afero to mock filesystem instead of actually creating files
-
 func TestFileDevice_RoundTrip(t *testing.T) {
 	device := NewFileDevice(0xAB)
 	testByte := byte(42)

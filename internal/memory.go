@@ -15,12 +15,12 @@ const (
 	SIC       AddressingMode = 0b00
 )
 
-type Memory [MAX_ADDRESS]byte
+type Memory [MAX_ADDRESS + 1]byte
 
-const MAX_ADDRESS = 1 << 20
+const MAX_ADDRESS = (1 << 20) - 1
 
 func (mem *Memory) ValidateAddress(address int32) error {
-	if address < 0 || address >= MAX_ADDRESS {
+	if address < 0 || address > MAX_ADDRESS {
 		return fmt.Errorf("invalid address: %d", address)
 	}
 	return nil

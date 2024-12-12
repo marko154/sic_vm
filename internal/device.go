@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+const MAX_DEVICES = 255
+
 type Device interface {
 	Read() (byte, error)
 	Write(byte) error

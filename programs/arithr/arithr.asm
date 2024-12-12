@@ -17,7 +17,7 @@ start	LDS     x .sum
 	RMO	S, A
 	DIVR    T, A
 	STA     quot
-	.mod TODO:
+	.mod
 	MULR	T, A
 	SUBR	A, S
 	. SUBR	x*y - (x/y) * y

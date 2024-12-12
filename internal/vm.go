@@ -27,7 +27,7 @@ func NewVM(reader io.Reader) *VM {
 	vm.SetDevice(0, NewInputDevice(os.Stdin))
 	vm.SetDevice(1, NewOutputDevice(os.Stdout))
 	vm.SetDevice(2, NewOutputDevice(os.Stderr))
-	for i := int32(3); i < 256; i++ {
+	for i := int32(3); i <= MAX_DEVICES; i++ {
 		vm.SetDevice(i, NewFileDevice(byte(i)))
 	}
 	return vm
@@ -144,12 +144,12 @@ func (vm *VM) tryExecuteF2(opcode, operands byte) (bool, error) {
 		vm.Registers.SetReg(r1, vm.Registers.GetReg(r1)>>shiftAmount)
 	case SUBR:
 		vm.Registers.SetReg(r2, vm.Registers.GetReg(r2)-vm.Registers.GetReg(r1))
-	case SVC:
-		return false, notImplementedError(SVC)
 	case TIXR:
 		vm.Registers.X++
 		r := vm.Registers.GetReg(r1)
 		vm.Registers.SetCC(getConditionCodes(vm.Registers.X, r))
+	case SVC:
+		return false, notImplementedError(SVC)
 	default:
 		return false, nil
 	}
@@ -161,31 +161,35 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	if err != nil {
 		return err
 	}
-	// TODO: refactor this completely, LDCH, STCH only need to read 1 byte
 	operandValue, err := vm.getOperandValue(opcode, ni, effectiveAddress)
 	if err != nil {
 		return err
 	}
 
 	switch Opcode(opcode) {
+	// arithmetic/logic/simple instructions
 	case ADD:
 		vm.Registers.A += operandValue
-	case ADDF:
-		return notImplementedError(ADDF)
 	case AND:
 		vm.Registers.A &= operandValue
-	case COMP:
-		cc := getConditionCodes(vm.Registers.A, operandValue)
-		vm.Registers.SetCC(cc)
-	case COMPF:
-		return notImplementedError(ADDF)
 	case DIV:
 		if operandValue == 0 {
 			return zeroDivisionError()
 		}
 		vm.Registers.A /= operandValue
-	case DIVF:
-		return notImplementedError(DIVF)
+	case MUL:
+		vm.Registers.A *= operandValue
+	case SUB:
+		vm.Registers.A -= operandValue
+	case OR:
+		vm.Registers.A |= operandValue
+	case TIX:
+		vm.Registers.X++
+		vm.Registers.SetCC(getConditionCodes(vm.Registers.X, operandValue))
+	case COMP:
+		cc := getConditionCodes(vm.Registers.A, operandValue)
+		vm.Registers.SetCC(cc)
+	// jump instructions
 	case J:
 		vm.Registers.PC = operandValue
 	case JEQ:
@@ -203,14 +207,15 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	case JSUB:
 		vm.Registers.L = vm.Registers.PC
 		vm.Registers.PC = operandValue
+	case RSUB:
+		vm.Registers.PC = vm.Registers.L
+	// load instructions
 	case LDA:
 		vm.Registers.A = operandValue
 	case LDB:
 		vm.Registers.B = operandValue
 	case LDCH:
 		vm.Registers.A = (vm.Registers.A & (-256)) | (operandValue & 0xFF)
-	case LDF:
-		return notImplementedError(LDF)
 	case LDL:
 		vm.Registers.L = operandValue
 	case LDS:
@@ -219,35 +224,13 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 		vm.Registers.T = operandValue
 	case LDX:
 		vm.Registers.X = operandValue
-	case LPS: // no idea what this is
-		return notImplementedError(LPS)
-	case MUL:
-		vm.Registers.A *= operandValue
-	case MULF:
-		return notImplementedError(MULF)
-	case OR:
-		vm.Registers.A |= operandValue
-	case RD:
-		value, err := vm.GetDevice(operandValue).Read()
-		if err != nil {
-			return err
-		}
-		vm.Registers.A = (vm.Registers.A & (-256)) | int32(value&0xFF)
-	case RSUB:
-		vm.Registers.PC = vm.Registers.L
-	case SSK: // no idea what this is
-		return notImplementedError(SSK)
+	// store instructions
 	case STA:
 		vm.Memory.SetWord(operandValue, vm.Registers.A)
 	case STB:
 		vm.Memory.SetWord(operandValue, vm.Registers.B)
 	case STCH:
-		// TODO: the general operandValue calculation won't work here
-		vm.Memory.SetByte(operandValue, byte(vm.Registers.A))
-	case STF:
-		return notImplementedError(STF)
-	case STI: // no idea what this is
-		return notImplementedError(STI)
+		vm.Memory.SetByte(operandValue, byte(vm.Registers.A)) // TODO: fix
 	case STL:
 		vm.Memory.SetWord(operandValue, vm.Registers.L)
 	case STS:
@@ -258,20 +241,43 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 		vm.Memory.SetWord(operandValue, vm.Registers.T)
 	case STX:
 		vm.Memory.SetWord(operandValue, vm.Registers.X)
-	case SUB:
-		vm.Registers.A -= operandValue
-	case SUBF:
-		return notImplementedError(SUBF)
+	// device instructions
+	case RD:
+		value, err := vm.GetDevice(operandValue).Read()
+		if err != nil {
+			return err
+		}
+		vm.Registers.A = (vm.Registers.A & (-256)) | int32(value&0xFF)
 	case TD:
 		vm.GetDevice(operandValue).Test()
-	case TIX:
-		vm.Registers.X++
-		vm.Registers.SetCC(getConditionCodes(vm.Registers.X, operandValue))
 	case WD:
 		device := vm.GetDevice(operandValue)
 		if err := device.Write(byte(vm.Registers.A)); err != nil {
 			return err
 		}
+
+	// floating point instructions
+	case ADDF:
+		return notImplementedError(ADDF)
+	case DIVF:
+		return notImplementedError(DIVF)
+	case LDF:
+		return notImplementedError(LDF)
+	case MULF:
+		return notImplementedError(MULF)
+	case STF:
+		return notImplementedError(STF)
+	case SUBF:
+		return notImplementedError(SUBF)
+	case COMPF:
+		return notImplementedError(ADDF)
+	// I have no idea what these are
+	case LPS:
+		return notImplementedError(LPS)
+	case SSK:
+		return notImplementedError(SSK)
+	case STI:
+		return notImplementedError(STI)
 	default:
 		return invalidOpcodeError(opcode)
 	}
@@ -330,8 +336,10 @@ func getAddressCalcMode(xbpe byte) AddressCalculationMode {
 	}
 }
 
+// TODO: refactor
 func (vm *VM) getOperandValue(opcode, ni byte, effectiveAddress int32) (int32, error) {
 	indirectionLevel := getIndirectionLevel(opcode, ni)
+	log.Debugf("indirection level %v\n", indirectionLevel)
 	return vm.resolveAddress(effectiveAddress, indirectionLevel)
 }
 
