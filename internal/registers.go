@@ -65,7 +65,8 @@ func (registers *Registers) SetReg(idx int, val int32) {
 	*regRef = val
 }
 
-func (registers *Registers) SetCC(cc ConditionCode) {
+func (registers *Registers) Compare(v1, v2 int32) {
+	cc := getConditionCodes(v1, v2)
 	registers.SW &= 0x00FFFF3F
 	registers.SW |= int32(cc) << 6
 }

@@ -124,8 +124,7 @@ func (vm *VM) tryExecuteF2(opcode, operands byte) (bool, error) {
 	case COMPR:
 		r1Val := vm.Registers.GetReg(r1)
 		r2Val := vm.Registers.GetReg(r2)
-		cc := getConditionCodes(r1Val, r2Val)
-		vm.Registers.SetCC(cc)
+		vm.Registers.Compare(r1Val, r2Val)
 	case DIVR:
 		r1Val := vm.Registers.GetReg(r1)
 		if r1Val == 0 {
@@ -147,7 +146,7 @@ func (vm *VM) tryExecuteF2(opcode, operands byte) (bool, error) {
 	case TIXR:
 		vm.Registers.X++
 		r := vm.Registers.GetReg(r1)
-		vm.Registers.SetCC(getConditionCodes(vm.Registers.X, r))
+		vm.Registers.Compare(vm.Registers.X, r)
 	case SVC:
 		return false, notImplementedError(SVC)
 	default:
@@ -188,10 +187,9 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 		vm.Registers.A |= operandValue
 	case TIX:
 		vm.Registers.X++
-		vm.Registers.SetCC(getConditionCodes(vm.Registers.X, operandValue))
+		vm.Registers.Compare(vm.Registers.X, operandValue)
 	case COMP:
-		cc := getConditionCodes(vm.Registers.A, operandValue)
-		vm.Registers.SetCC(cc)
+		vm.Registers.Compare(vm.Registers.A, operandValue)
 	// jump instructions - only immediate addressing supported
 	case J:
 		vm.Registers.PC = effectiveAddress
