@@ -163,10 +163,6 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	if err != nil {
 		return err
 	}
-	operandValue, err := vm.getOperandValue(opcode, ni, effectiveAddress)
-	if err != nil {
-		return err
-	}
 
 	switch Opcode(opcode) {
 	// arithmetic/logic/simple instructions
@@ -229,21 +225,21 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 		vm.Registers.X = vm.LoadWord(ni, effectiveAddress)
 	// store instructions
 	case STA:
-		vm.Memory.SetWord(operandValue, vm.Registers.A)
+		vm.StoreWord(ni, effectiveAddress, vm.Registers.A)
 	case STB:
-		vm.Memory.SetWord(operandValue, vm.Registers.B)
+		vm.StoreWord(ni, effectiveAddress, vm.Registers.B)
 	case STCH:
-		vm.Memory.SetByte(operandValue, byte(vm.Registers.A)) // TODO: fix
+		vm.StoreByte(ni, effectiveAddress, byte(vm.Registers.A))
 	case STL:
-		vm.Memory.SetWord(operandValue, vm.Registers.L)
+		vm.StoreWord(ni, effectiveAddress, vm.Registers.L)
 	case STS:
-		vm.Memory.SetWord(operandValue, vm.Registers.S)
+		vm.StoreWord(ni, effectiveAddress, vm.Registers.S)
 	case STSW:
-		vm.Memory.SetWord(operandValue, vm.Registers.SW)
+		vm.StoreWord(ni, effectiveAddress, vm.Registers.SW)
 	case STT:
-		vm.Memory.SetWord(operandValue, vm.Registers.T)
+		vm.StoreWord(ni, effectiveAddress, vm.Registers.T)
 	case STX:
-		vm.Memory.SetWord(operandValue, vm.Registers.X)
+		vm.StoreWord(ni, effectiveAddress, vm.Registers.X)
 	// device instructions
 	case RD:
 		deviceNum := vm.LoadByte(ni, effectiveAddress)
@@ -381,27 +377,28 @@ func (vm *VM) LoadByte(ni byte, effectiveAddress int32) byte {
 	return value
 }
 
-// TODO: refactor
-func (vm *VM) getOperandValue(opcode, ni byte, effectiveAddress int32) (int32, error) {
-	indirectionLevel := getIndirectionLevel(opcode, ni)
-	log.Debugf("indirection level %v\n", indirectionLevel)
-	return vm.resolveAddress(effectiveAddress, indirectionLevel)
+func (vm *VM) StoreWord(ni byte, effectiveAddress, value int32) error {
+	address := effectiveAddress
+	if AddressingMode(ni) == INDIRECT {
+		addr, err := vm.Memory.GetWord(effectiveAddress)
+		if err != nil {
+			return err
+		}
+		address = addr
+	}
+	return vm.Memory.SetWord(address, value)
 }
 
-func getIndirectionLevel(opcode, ni byte) int {
-	level := 0
-	switch AddressingMode(ni) {
-	case IMMEDIATE:
-		level = 0
-	case DIRECT, SIC:
-		level = 1
-	case INDIRECT:
-		level = 2
+func (vm *VM) StoreByte(ni byte, effectiveAddress int32, value byte) error {
+	address := effectiveAddress
+	if AddressingMode(ni) == INDIRECT {
+		addr, err := vm.Memory.GetWord(effectiveAddress)
+		if err != nil {
+			return err
+		}
+		address = addr
 	}
-	if isStoreInstruction(opcode) || isJumpInstruction(opcode) {
-		level--
-	}
-	return level
+	return vm.Memory.SetByte(address, value)
 }
 
 func (vm *VM) resolveAddress(effectiveAddress int32, indirectionLevel int) (int32, error) {
