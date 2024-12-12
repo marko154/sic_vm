@@ -37,7 +37,6 @@ func (vm *VM) Load() error {
 	return vm.Loader.Load(vm)
 }
 
-// TODO: bounds check?
 func (vm *VM) GetDevice(num byte) Device {
 	device := vm.Devices[num]
 	return device
@@ -154,7 +153,8 @@ func (vm *VM) tryExecuteF2(opcode, operands byte) (bool, error) {
 
 // load, arithmetic, device instructions resolve the address the same way
 // store instructions have one level of indirection less
-// jump instructions have one level of indirection less
+// jump instructions will always use effectiveAddress as the target
+// i could support indirect addressing for jump instructions, but it's not necessary
 func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 	effectiveAddress, err := vm.getEffectiveAddress(ni, operand)
 	if err != nil {
@@ -332,12 +332,6 @@ func getAddressCalcMode(xbpe byte) AddressCalculationMode {
 		E: xbpe&0b0001 != 0,
 	}
 }
-
-// jump instructions have one level of indirection less - we can handle this by
-// always using immediate addressing (indirect adressing could be added, but is not needed)
-
-// load, arithmetic, device instructions resolve the address the same way
-// store instructions have one level of indirection less
 
 func (vm *VM) LoadWord(ni byte, effectiveAddress int32) int32 {
 	if AddressingMode(ni) == IMMEDIATE {

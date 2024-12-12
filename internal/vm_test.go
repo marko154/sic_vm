@@ -1,17 +1,26 @@
 package vm
 
 import (
+	"bytes"
 	"os"
 	"testing"
 )
 
-func runVMTestProgram(filename string) (*VM, error) {
+func loadVMTestProgram(filename string) (*VM, error) {
 	reader, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
 	vm := NewVM(reader)
 	if err := vm.Load(); err != nil {
+		return vm, err
+	}
+	return vm, nil
+}
+
+func runVMTestProgram(filename string) (*VM, error) {
+	vm, err := loadVMTestProgram(filename)
+	if err != nil {
 		return vm, err
 	}
 	return vm, vm.Run()
@@ -85,5 +94,21 @@ func TestFactorial(t *testing.T) {
 	value := vm.Registers.A
 	if value != 720 {
 		t.Errorf("Expected 720, got %d", value)
+	}
+}
+
+func TestEcho(t *testing.T) {
+	vm, _ := loadVMTestProgram("../programs/echo/echo.obj")
+	buffer := new(bytes.Buffer)
+	vm.SetDevice(1, NewOutputDevice(buffer))
+	err := vm.Run()
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+		return
+	}
+	output := buffer.String()
+	expected := "12345\nhello world!\n"
+	if output != expected {
+		t.Errorf("Expected %v, got %v", expected, output)
 	}
 }
