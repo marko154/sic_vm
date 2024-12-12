@@ -15,5 +15,6 @@
 -   [ ] explain how to use the vm in the readme
 -   [ ] run.sh script that runs the vm
 
-Usage:
+### Usage:
+
 TODO

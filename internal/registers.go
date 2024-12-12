@@ -13,6 +13,8 @@ const (
 )
 
 // https://sic-xe.github.io/chapters/sic.html
+// TODO: create a 24-bit int type to correctly handle overflows,
+// but I really dont want to :)
 type Registers struct {
 	A  int32 // accumulator
 	X  int32 // index register
