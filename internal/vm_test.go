@@ -112,3 +112,26 @@ func TestEcho(t *testing.T) {
 		t.Errorf("Expected %v, got %v", expected, output)
 	}
 }
+
+// kitchen sink test
+var expected = `1
+362880
+24
+720
+`
+
+func TestRec(t *testing.T) {
+	vm, _ := loadVMTestProgram("../programs/rec/rec.obj")
+	buffer := new(bytes.Buffer)
+	vm.SetDevice(1, NewOutputDevice(buffer))
+	err := vm.Run()
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+		return
+	}
+	output := buffer.String()
+	if output != expected {
+		t.Errorf("Expected %v, got %v", expected, output)
+	}
+
+}

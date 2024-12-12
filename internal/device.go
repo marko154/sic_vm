@@ -2,9 +2,11 @@ package vm
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
+	"strings"
 )
 
 const MAX_DEVICES = 255
@@ -56,29 +58,57 @@ func (d *OutputDevice) Test() bool {
 }
 
 // Maps to a file on disk named XX.dev, from the hex value of the byte of the device number
-// TODO: cleanup files after use?
 type FileDevice struct {
 	filename string
+	file     *os.File
+	reader   *bufio.Reader
 }
 
 func NewFileDevice(name byte) Device {
-	filename := strconv.FormatUint(uint64(name), 16) + ".dev"
-	return &FileDevice{filename: filename}
+	fname := strings.ToUpper(strconv.FormatUint(uint64(name), 16))
+	return &FileDevice{filename: fname + ".dev"}
+}
+
+func (d *FileDevice) initFile() error {
+	var err error
+	if d.file == nil {
+		d.file, err = os.OpenFile(d.filename, os.O_RDWR|os.O_CREATE, 0666)
+		if err != nil {
+			return err
+		}
+		d.reader = bufio.NewReader(d.file)
+	}
+	return nil
 }
 
 func (d *FileDevice) Read() (byte, error) {
-	file, err := os.Open(d.filename)
+	err := d.initFile()
 	if err != nil {
 		return 0, err
 	}
-	defer file.Close()
-	return bufio.NewReader(file).ReadByte()
+	return d.reader.ReadByte()
 }
 
 func (d *FileDevice) Write(value byte) error {
-	return os.WriteFile(d.filename, []byte{value}, 0644)
+	err := d.initFile()
+	if err != nil {
+		return err
+	}
+	if _, err := d.file.Write([]byte{value}); err != nil {
+		return fmt.Errorf("failed to write to file %s: %v", d.filename, err)
+	}
+	return d.file.Sync()
 }
+
 func (d *FileDevice) Test() bool {
 	info, err := os.Stat(d.filename)
 	return err == nil && !info.IsDir()
+}
+
+func (d *FileDevice) Close() error {
+	if d.file != nil {
+		err := d.file.Close()
+		return err
+	}
+	return nil
 }

@@ -1,0 +1,138 @@
+00000            prog     START   0    
+00000  4B2073    first    JSUB    sinit    
+00003  4B2015    loop     JSUB    readNum    
+00006  290000             COMP    #0    
+00009  33200C             JEQ     halt    
+0000C  4B2038             JSUB    fact    
+0000F  4B20C7             JSUB    num    
+00012  4B209A             JSUB    nl    
+00015  3F2FEB             J       loop    
+00018  3F2FFD    halt     J       halt    
+                  
+0001B  872110    readNum  STT     readT    
+0001E  7F2110             STS     readS    
+00021  750000             LDT     #0    
+00024  6D000A             LDS     #10    
+00027  B400      rLoop    CLEAR   A    
+00029  D900FA             RD      #250    
+0002C  29000A             COMP    #10    . newline
+0002F  33200A             JEQ     readEnd    
+00032  1D0030             SUB     #48    
+00035  9845               MULR    S,T    
+00037  9005               ADDR    A,T    
+00039  3F2FEB             J       rLoop    
+0003C  AC50      readEnd  RMO     T,A    
+0003E  7720ED             LDT     readT    
+00041  6F20ED             LDS     readS    
+00044  4F0000             RSUB        
+                  
+00047  290000    fact     COMP    #0    
+0004A  332023             JEQ     base    
+                  
+0004D  160CEC             STL     @sp    
+00050  4B2032             JSUB    spush    
+00053  0E0CEC             STA     @sp    
+00056  4B202C             JSUB    spush    
+                  
+00059  1D0001             SUB     #1    
+0005C  4B2FE8             JSUB    fact    
+                  
+0005F  4B2035             JSUB    spop    
+00062  6A0CEC             LDB     @sp    
+00065  4B202F             JSUB    spop    
+00068  0A0CEC             LDL     @sp    
+0006B  9830               MULR    B,A    
+0006D  3F2003             J       factRet    
+00070  010001    base     LDA     #1    
+00073  4F0000    factRet  RSUB        
+                  
+00076  0F0CEF    sinit    STA     stackA    
+00079  0120B8             LDA     #stack    
+0007C  0F0CEC             STA     sp    
+0007F  030CEF             LDA     stackA    
+00082  4F0000             RSUB        
+00085  0F0CEF    spush    STA     stackA    
+00088  030CEC             LDA     sp    
+0008B  190003             ADD     #3    
+0008E  0F0CEC             STA     sp    
+00091  030CEF             LDA     stackA    
+00094  4F0000             RSUB        
+00097  0F0CEF    spop     STA     stackA    
+0009A  030CEC             LDA     sp    
+0009D  1D0003             SUB     #3    
+000A0  0F0CEC             STA     sp    
+000A3  030CEF             LDA     stackA    
+000A6  4F0000             RSUB        
+                  
+                  . print char in register A
+000A9  DD0001    char     WD      #1    
+000AC  4F0000             RSUB        
+                  
+                  . print new line
+000AF  0F2067    nl       STA     nlA    
+000B2  172067             STL     nlL    
+000B5  51000A             LDCH    #10    
+000B8  4B2FEE             JSUB    char    
+000BB  03205B             LDA     nlA    
+000BE  0B205B             LDL     nlL    
+000C1  4F0000             RSUB        
+                  
+                  . A -> A % 10
+000C4  87205B    mod10    STT     modT    
+000C7  AC05               RMO     A,T    
+000C9  25000A             DIV     #10    
+000CC  21000A             MUL     #10    
+000CF  9405               SUBR    A,T    
+000D1  AC50               RMO     T,A    
+000D3  77204C             LDT     modT    
+000D6  4F0000             RSUB        
+                  
+                  . int print_num(int a) {
+                  . if (a < 10) {
+                  . print(a);
+                  . } else {
+                  . print_num(a / 10);
+                  . print(a % 10);
+                  . }
+                  . }
+                  . print number in register A
+000D9  160CEC    num      STL     @sp    
+000DC  4B2FA6             JSUB    spush    
+000DF  0E0CEC             STA     @sp    
+000E2  4B2FA0             JSUB    spush    
+000E5  860CEC             STT     @sp    
+000E8  4B2F9A             JSUB    spush    
+                  
+000EB  29000A             COMP    #10    
+000EE  3B200A             JLT     numEnd    
+000F1  AC05               RMO     A,T    
+000F3  25000A             DIV     #10    
+000F6  4B2FE0             JSUB    num    
+000F9  AC50               RMO     T,A    
+000FB  4B2FC6    numEnd   JSUB    mod10    
+000FE  190030             ADD     #48    
+00101  DD0001             WD      #1    
+00104  4B2F90             JSUB    spop    
+00107  760CEC             LDT     @sp    
+0010A  4B2F8A             JSUB    spop    
+0010D  020CEC             LDA     @sp    
+00110  4B2F84             JSUB    spop    
+00113  0A0CEC             LDL     @sp    
+00116  4F0000             RSUB        
+                  
+00119  000000    nlA      RESW    1    
+0011C  000000    nlL      RESW    1    
+0011F  000000    modB     RESW    1    
+00122  000000    modT     RESW    1    
+00125  000000    numL     RESW    1    
+00128  000000    numA     RESW    1    
+                  
+                  
+0012B  000000    readA    RESW    1    
+0012E  000000    readT    RESW    1    
+00131  000000    readS    RESW    1    
+                  
+00134  00....00  stack    RESW    1000    
+00CEC  000000    sp       WORD    0    
+00CEF  000000    stackA   WORD    0    
+00CF2                     END     first    

@@ -1,0 +1,62 @@
+***** Section <default> *****
+Stats: size=3314  blocks=3314  symbols=30  literals=0  relocations=21
+Blocks
+    name        start   size  #ins #dir #sto
+    <default>   00000  00CF2    97    4   10
+Symbols
+    name         hex       dec  scope     kind      type      description
+    base      000070       112  local     relative  code      label
+    char      0000A9       169  local     relative  code      label
+    fact      000047        71  local     relative  code      label
+    factRet   000073       115  local     relative  code      label
+    first     000000         0  local     relative  code      label
+    halt      000018        24  local     relative  code      label
+    loop      000003         3  local     relative  code      label
+    mod10     0000C4       196  local     relative  code      label
+    modB      00011F       287  local     relative  data      label
+    modT      000122       290  local     relative  data      label
+    nl        0000AF       175  local     relative  code      label
+    nlA       000119       281  local     relative  data      label
+    nlL       00011C       284  local     relative  data      label
+    num       0000D9       217  local     relative  code      label
+    numA      000128       296  local     relative  data      label
+    numEnd    0000FB       251  local     relative  code      label
+    numL      000125       293  local     relative  data      label
+    prog      000000         0  exported  relative  code      label
+    rLoop     000027        39  local     relative  code      label
+    readA     00012B       299  local     relative  data      label
+    readEnd   00003C        60  local     relative  code      label
+    readNum   00001B        27  local     relative  code      label
+    readS     000131       305  local     relative  data      label
+    readT     00012E       302  local     relative  data      label
+    sinit     000076       118  local     relative  code      label
+    sp        000CEC      3308  local     relative  data      label
+    spop      000097       151  local     relative  code      label
+    spush     000085       133  local     relative  code      label
+    stack     000134       308  local     relative  data      label
+    stackA    000CEF      3311  local     relative  data      label
+Literals
+    label   definition
+Relocations
+    address length flag symbol
+    0004E        3
+    00054        3
+    00063        3
+    00069        3
+    00077        3
+    0007D        3
+    00080        3
+    00086        3
+    00089        3
+    0008F        3
+    00092        3
+    00098        3
+    0009B        3
+    000A1        3
+    000A4        3
+    000DA        3
+    000E0        3
+    000E6        3
+    00108        3
+    0010E        3
+    00114        3

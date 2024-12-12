@@ -27,6 +27,7 @@ func NewVM(reader io.Reader) *VM {
 	vm.SetDevice(0, NewInputDevice(os.Stdin))
 	vm.SetDevice(1, NewOutputDevice(os.Stdout))
 	vm.SetDevice(2, NewOutputDevice(os.Stderr))
+	// TODO: close files then done
 	for i := 3; i <= MAX_DEVICES; i++ {
 		vm.SetDevice(byte(i), NewFileDevice(byte(i)))
 	}
