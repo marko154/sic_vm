@@ -10,7 +10,7 @@ import (
 type VM struct {
 	Memory       Memory
 	Registers    *Registers
-	Devices      map[int32]Device // device number -> device
+	Devices      map[byte]Device // device number -> device
 	Loader       *Loader
 	ProgramName  string
 	CodeAddress  int32
@@ -21,14 +21,14 @@ type VM struct {
 func NewVM(reader io.Reader) *VM {
 	vm := &VM{
 		Loader:    NewLoader(reader),
-		Devices:   make(map[int32]Device),
+		Devices:   make(map[byte]Device),
 		Registers: NewRegisters(),
 	}
 	vm.SetDevice(0, NewInputDevice(os.Stdin))
 	vm.SetDevice(1, NewOutputDevice(os.Stdout))
 	vm.SetDevice(2, NewOutputDevice(os.Stderr))
-	for i := int32(3); i <= MAX_DEVICES; i++ {
-		vm.SetDevice(i, NewFileDevice(byte(i)))
+	for i := byte(3); i <= MAX_DEVICES; i++ {
+		vm.SetDevice(i, NewFileDevice(i))
 	}
 	return vm
 }
@@ -38,12 +38,12 @@ func (vm *VM) Load() error {
 }
 
 // TODO: bounds check?
-func (vm *VM) GetDevice(num int32) Device {
+func (vm *VM) GetDevice(num byte) Device {
 	device := vm.Devices[num]
 	return device
 }
 
-func (vm *VM) SetDevice(num int32, device Device) {
+func (vm *VM) SetDevice(num byte, device Device) {
 	vm.Devices[num] = device
 }
 
@@ -246,15 +246,16 @@ func (vm *VM) tryExecuteTypeSICF3F4(opcode, ni, operand byte) error {
 		vm.Memory.SetWord(operandValue, vm.Registers.X)
 	// device instructions
 	case RD:
-		value, err := vm.GetDevice(vm.LoadByte(ni, effectiveAddress)).Read()
+		deviceNum := vm.LoadByte(ni, effectiveAddress)
+		value, err := vm.GetDevice(deviceNum).Read()
 		if err != nil {
 			return err
 		}
 		vm.Registers.A = (vm.Registers.A & (-256)) | int32(value&0xFF)
 	case TD:
-		vm.GetDevice(vm.LoadWord(ni, effectiveAddress)).Test()
+		vm.GetDevice(vm.LoadByte(ni, effectiveAddress)).Test()
 	case WD:
-		device := vm.GetDevice(operandValue)
+		device := vm.GetDevice(vm.LoadByte(ni, effectiveAddress))
 		if err := device.Write(byte(vm.Registers.A)); err != nil {
 			return err
 		}
