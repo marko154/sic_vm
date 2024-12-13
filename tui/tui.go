@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"maps"
+	logger "sic_vm"
 	"sic_vm/simulator"
 	"sic_vm/vm"
 	"slices"
@@ -18,6 +19,7 @@ var (
 	registersTable *tview.Table
 	memoryTable    *tview.Table
 	startStopBtn   *tview.Button
+	stepBtn        *tview.Button
 	sim            *simulator.Simulator
 )
 
@@ -55,8 +57,8 @@ func Setup(simulator *simulator.Simulator) {
 		// update registers, memory, ...
 		app.QueueUpdateDraw(func() {
 			updateRegisters(vm.Registers)
-			// updateControls()
-			// updateMemory(vm.Memory)
+			updateMemory(&vm.Memory)
+			updateControls()
 		})
 	})
 
@@ -66,12 +68,10 @@ func Setup(simulator *simulator.Simulator) {
 }
 
 func createControls() *tview.Flex {
-	isRunning := false
 	startStopBtn = tview.NewButton("Start").SetSelectedFunc(func() {
-		go sim.Start()
-		isRunning = !isRunning
+		go sim.Toggle()
 	})
-	stepBtn := tview.NewButton("Step").SetSelectedFunc(func() {
+	stepBtn = tview.NewButton("Step").SetSelectedFunc(func() {
 		go sim.Step()
 	})
 	controls := tview.NewFlex()
@@ -96,20 +96,18 @@ func createRegistersTable() *tview.Table {
 	return regTable
 }
 
+// TODO: use VirtualTable to support entire memory
+// https://github.com/rivo/tview/wiki/VirtualTable
 func createMemoryTable() *tview.Flex {
 	rightPane := tview.NewFlex().SetDirection(tview.FlexRow)
 	rightPane.SetBorder(true)
 	rightPane.AddItem(tview.NewTextView().SetText("Memory"), 1, 1, false)
 	memoryTable = tview.NewTable().SetBorders(true)
-
 	for rowIdx := 0; rowIdx < 100; rowIdx++ {
-		memoryTable.SetCellSimple(rowIdx, 0, fmt.Sprintf(" 0x%X ", rowIdx))
-		memoryTable.GetCell(rowIdx, 0).SetAlign(tview.AlignRight)
-		for colIdx := 0; colIdx < MEM_TABLE_WIDTH; colIdx++ {
-			memoryTable.SetCellSimple(rowIdx, colIdx+1, fmt.Sprintf(" 0x%02X ", 0))
-		}
+		memoryTable.SetCellSimple(rowIdx, 0, fmt.Sprintf(" 0x%X ", rowIdx*16))
+		memoryTable.GetCell(rowIdx, 0).SetBackgroundColor(tcell.ColorDarkBlue)
 	}
-	// TODO: paint byte at PC a different color
+	updateMemory(&sim.Vm.Memory)
 	rightPane.AddItem(memoryTable, 0, 1, false)
 	return rightPane
 }
@@ -117,19 +115,40 @@ func createMemoryTable() *tview.Flex {
 func updateRegisters(registers *vm.Registers) {
 	for idx, regIdx := range slices.Collect(maps.Keys(vm.RegisterNames)) {
 		if regIdx != 6 {
-			formatted := fmt.Sprintf(" 0x%06X ", registers.GetReg(regIdx))
+			formatted := fmt.Sprintf("0x%06X", registers.GetReg(regIdx))
 			registersTable.SetCellSimple(1, idx, formatted)
 		}
 	}
 }
 
-// TODO: implement in simulator
 func updateControls() {
-	startStopBtn.SetTitle("")
+	logger.Log.Printf("sim: isRunning=%v isDone=%v\n", sim.IsRunning, sim.IsDone)
+	if sim.IsRunning {
+		startStopBtn.SetLabel("Stop")
+		stepBtn.SetLabel("Running")
+	} else {
+		startStopBtn.SetLabel("Start")
+		stepBtn.SetLabel("Step")
+	}
+	if sim.IsDone {
+		startStopBtn.SetLabel("Done")
+		stepBtn.SetLabel("Done")
+	}
 }
 
-func updateMemory(address int32, content []byte) {
-
+func updateMemory(memory *vm.Memory) {
+	for row := 0; row < 100; row++ {
+		for col := 0; col < MEM_TABLE_WIDTH; col++ {
+			addr := row*MEM_TABLE_WIDTH + col
+			value, _ := memory.GetByte(int32(addr))
+			memoryTable.SetCellSimple(row, col+1, fmt.Sprintf(" 0x%02X ", value))
+			memoryTable.GetCell(row, col+1).SetTextColor(tcell.ColorWhite)
+		}
+	}
+	pc := sim.Vm.Registers.PC
+	row := int(pc / MEM_TABLE_WIDTH)
+	col := int(pc % MEM_TABLE_WIDTH)
+	memoryTable.GetCell(row, col+1).SetTextColor(tcell.ColorRed)
 }
 
 // TODO: optional, add a window on left to show stdout

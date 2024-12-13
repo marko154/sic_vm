@@ -1,0 +1,90 @@
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=false
+running callbacks
+sim: isRunning=true isDone=false
+done=true
+Stop()
+running callbacks
+sim: isRunning=false isDone=true
+quitting
+running callbacks
+sim: isRunning=false isDone=true
+running callbacks
+sim: isRunning=true isDone=true
+done=true
+Stop()
+running callbacks
+sim: isRunning=false isDone=true
+quitting
+running callbacks
+sim: isRunning=false isDone=true
+running callbacks
+sim: isRunning=true isDone=true
+done=true
+Stop()
+running callbacks
+sim: isRunning=false isDone=true
+quitting
+running callbacks
+sim: isRunning=false isDone=true
+running callbacks
+sim: isRunning=true isDone=true
+done=true
+Stop()
+running callbacks
+sim: isRunning=false isDone=true
+quitting
+running callbacks
+sim: isRunning=false isDone=true
