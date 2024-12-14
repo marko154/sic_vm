@@ -145,6 +145,11 @@ func updateMemory(memory *vm.Memory) {
 			memoryTable.GetCell(row, col+1).SetTextColor(tcell.ColorWhite)
 		}
 	}
+	for _, address := range memory.Changes {
+		row := int(address / MEM_TABLE_WIDTH)
+		col := int(address % MEM_TABLE_WIDTH)
+		memoryTable.GetCell(row, col+1).SetTextColor(tcell.ColorGreen)
+	}
 	pc := sim.Vm.Registers.PC
 	row := int(pc / MEM_TABLE_WIDTH)
 	col := int(pc % MEM_TABLE_WIDTH)

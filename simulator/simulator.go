@@ -37,6 +37,9 @@ func (s *Simulator) Subscribe(callback func(*vm.VM)) func() {
 }
 
 func (s *Simulator) Step() {
+	if !s.IsDone {
+		return
+	}
 	done, err := s.Vm.Step()
 	s.IsDone = done
 	logger.Log.Printf("done=%v\n", done)
@@ -90,7 +93,9 @@ func (s *Simulator) runCallbacks() {
 
 func (s *Simulator) Stop() {
 	logger.Log.Printf("Stop()\n")
-	close(s.quit)
+	if s.quit != nil {
+		close(s.quit)
+	}
 }
 
 func (s *Simulator) SetSpeed(speed int) {
