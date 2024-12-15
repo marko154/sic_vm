@@ -37,7 +37,7 @@ func (s *Simulator) Subscribe(callback func(*vm.VM)) func() {
 }
 
 func (s *Simulator) Step() {
-	if !s.IsDone {
+	if s.IsDone {
 		return
 	}
 	done, err := s.Vm.Step()
